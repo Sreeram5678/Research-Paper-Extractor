@@ -247,7 +247,7 @@ For more help: `python main.py --help` or `python main.py [command] --help`
 
 ## License
 
-This project is open source and available under the [Open Source License](LICENSE). Feel free to use, modify, and distribute this software according to the terms of the license.
+For licensing information, please contact [Sreeram](mailto:sreeram.lagisetty@gmail.com).
 
 ---
 
