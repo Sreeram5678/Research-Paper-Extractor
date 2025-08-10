@@ -245,6 +245,10 @@ For more help: `python main.py --help` or `python main.py [command] --help`
 **GitHub**: [Sreeram5678](https://github.com/Sreeram5678)  
 **Instagram**: [@sreeram_3012](https://www.instagram.com/sreeram_3012?igsh=N2Fub3A5eWF4cjJs&utm_source=qr)
 
+## License
+
+This project is open source and available under the [Open Source License](LICENSE). Feel free to use, modify, and distribute this software according to the terms of the license.
+
 ---
 
 **Repository**: [Research Paper Extractor](https://github.com/Sreeram5678/Research-Paper-Extractor.git)

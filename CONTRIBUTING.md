@@ -94,7 +94,7 @@ When reporting bugs, please include:
 
 ## License
 
-By contributing to this project, you agree that your contributions will be licensed under the same terms as this project.
+By contributing to this project, you agree that your contributions will be licensed under the same open source terms as this project.
 
 ---
 

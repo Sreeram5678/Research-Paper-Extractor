@@ -39,7 +39,7 @@ Research Paper Extractor/
 ├── requirements.txt              # Dependencies
 ├── README.md                    # Main documentation
 ├── USAGE_EXAMPLES.md            # Usage examples
-├── LICENSE                      # Custom License
+├── LICENSE                      # Open Source License
 └── docs/                        # Additional documentation
     └── README.md                # This file
 ```
