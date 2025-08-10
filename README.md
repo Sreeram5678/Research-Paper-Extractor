@@ -245,9 +245,7 @@ For more help: `python main.py --help` or `python main.py [command] --help`
 **GitHub**: [Sreeram5678](https://github.com/Sreeram5678)  
 **Instagram**: [@sreeram_3012](https://www.instagram.com/sreeram_3012?igsh=N2Fub3A5eWF4cjJs&utm_source=qr)
 
-## License
 
-For licensing information, please contact [Sreeram](mailto:sreeram.lagisetty@gmail.com).
 
 ---
 
