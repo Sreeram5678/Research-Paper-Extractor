@@ -220,7 +220,7 @@ Feel free to submit issues and enhancement requests!
 
 ## License
 
-This project is open source. Use it responsibly and respect arXiv's terms of service.
+For licensing information, please contact [Sreeram](mailto:sreeram.lagisetty@gmail.com).
 
 ## Complete Usage Guide
 
