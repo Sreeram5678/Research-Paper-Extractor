@@ -94,7 +94,7 @@ When reporting bugs, please include:
 
 ## License
 
-By contributing to this project, you agree that your contributions will be licensed under the MIT License.
+By contributing to this project, you agree that your contributions will be licensed under the same terms as this project.
 
 ---
 
