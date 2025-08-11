@@ -207,7 +207,7 @@ def search_by_author(author_name: str, max_results: int, download_dir: Optional[
 def categories():
     """List available arXiv categories."""
     
-            click.echo("Available arXiv categories:\n")
+    click.echo("Available arXiv categories:\n")
     
     for category, description in ARXIV_CATEGORIES.items():
         click.echo(f"  {category:<15} - {description}")

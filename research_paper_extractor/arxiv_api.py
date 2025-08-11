@@ -10,7 +10,7 @@ from datetime import datetime
 from typing import List, Dict, Optional
 import logging
 
-from config import (
+from .config import (
     ARXIV_BASE_URL, 
     REQUEST_DELAY, 
     DEFAULT_MAX_RESULTS, 

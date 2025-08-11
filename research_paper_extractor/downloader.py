@@ -11,14 +11,14 @@ from typing import List, Optional
 from tqdm import tqdm
 import logging
 
-from config import (
+from .config import (
     ARXIV_PDF_BASE_URL, 
     REQUEST_DELAY, 
     get_download_dir, 
     sanitize_filename,
     sanitize_topic_name
 )
-from arxiv_api import ArxivPaper
+from .arxiv_api import ArxivPaper
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
