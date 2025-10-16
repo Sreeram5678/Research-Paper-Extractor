@@ -22,7 +22,7 @@ setup(
     url="https://github.com/Sreeram5678/Research-Paper-Extractor",
     packages=find_packages(),
     classifiers=[
-        "Development Status :: 4 - Beta",
+        "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Science/Research",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
