@@ -1,0 +1,112 @@
+name: 🐛 Bug Report
+description: Report a bug or unexpected behavior
+title: "[BUG] "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 🐛 Bug Report
+
+        Thanks for taking the time to report a bug! This helps make Research Paper Extractor better for everyone.
+
+        **Before submitting:**
+        - [ ] I have searched for similar issues and couldn't find any
+        - [ ] I have tried the latest version
+        - [ ] I have read the [README](https://github.com/Sreeram5678/Research-Paper-Extractor#readme)
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear and concise description of what the bug is.
+      placeholder: "When I try to download papers, the tool crashes with an error..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Step-by-step instructions to reproduce the issue.
+      placeholder: |
+        1. Run `python main.py search "machine learning"`
+        2. Enter download confirmation
+        3. See error in console
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What you expected to happen.
+      placeholder: "The tool should download the papers and save them to the downloads folder."
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened.
+      placeholder: "The tool crashed with a FileNotFoundError."
+
+  - type: textarea
+    id: error
+    attributes:
+      label: Error Message/Traceback
+      description: Copy and paste the full error message or traceback.
+      render: shell
+      placeholder: |
+        Traceback (most recent call last):
+          File "main.py", line 123, in search
+            ...
+        FileNotFoundError: [Errno 2] No such file or directory: 'downloads/'
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      options:
+        - Windows
+        - macOS
+        - Linux
+        - Other (please specify)
+    validations:
+      required: true
+
+  - type: input
+    id: python_version
+    attributes:
+      label: Python Version
+      description: Run `python --version` to find your Python version.
+      placeholder: "Python 3.11.5"
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Research Paper Extractor Version
+      description: Run `python main.py --version` or check your setup.py.
+      placeholder: "1.0.0"
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Any additional information that might help debug this issue.
+      placeholder: |
+        - Internet connection: Stable
+        - arXiv ID being accessed: 2301.07041
+        - Custom download directory: /Users/me/Documents/papers/
+        - Any recent changes to the system
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I have provided all the information requested above
+          required: true
+        - label: I am using the latest version of Research Paper Extractor
+        - label: I have tried reproducing the issue with different inputs

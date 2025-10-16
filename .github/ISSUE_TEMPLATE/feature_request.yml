@@ -1,0 +1,112 @@
+name: ✨ Feature Request
+description: Suggest a new feature or enhancement
+title: "[FEATURE] "
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## ✨ Feature Request
+
+        Thanks for suggesting a new feature! Your ideas help make Research Paper Extractor better for the research community.
+
+        **Before submitting:**
+        - [ ] I have searched for similar feature requests and couldn't find any
+        - [ ] This feature would benefit other researchers/academics
+        - [ ] I understand this is a volunteer-maintained project
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Feature Summary
+      description: A brief description of the proposed feature.
+      placeholder: "Add support for downloading papers from multiple sources beyond arXiv"
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem/Use Case
+      description: What problem would this feature solve? What's the current limitation?
+      placeholder: |
+        Currently, users can only download from arXiv. Many researchers publish on other platforms like:
+        - IEEE Xplore
+        - ACM Digital Library
+        - ResearchGate
+        - SSRN
+
+        This limits the tool's usefulness for comprehensive literature reviews.
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: How should this feature work? Provide as much detail as possible.
+      placeholder: |
+        Add a new command `python main.py search-multi "query" --sources arxiv,ieee,acm`
+
+        The tool would:
+        1. Search across multiple academic databases
+        2. Deduplicate results
+        3. Present unified results with source attribution
+        4. Allow selective downloading from different sources
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternative Solutions
+      description: Have you considered any alternative approaches?
+      placeholder: |
+        Alternative 1: Separate commands for each source
+        Alternative 2: Plugin system for third-party sources
+        Alternative 3: Configuration file to specify preferred sources
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How important is this feature to you?
+      options:
+        - Nice to have
+        - Would be helpful
+        - Important for my work
+        - Critical/blocking my research
+    validations:
+      required: true
+
+  - type: dropdown
+    id: complexity
+    attributes:
+      label: Estimated Complexity
+      description: How complex do you think this feature would be to implement?
+      options:
+        - Simple (small code changes)
+        - Medium (new functionality)
+        - Complex (architectural changes)
+        - Very Complex (major rewrite/integration)
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Any additional information, mockups, or examples.
+      placeholder: |
+        - Similar tools: Mendeley, Zotero, Paperpile
+        - API availability: IEEE has an API, ACM has limited access
+        - Expected usage: Daily by researchers, weekly bulk downloads
+        - Mockup: [Attach screenshot of desired interface]
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      description: Are you willing to help implement this feature?
+      options:
+        - label: I would like to implement this feature myself
+        - label: I can help test this feature
+        - label: I can provide more details or clarification
