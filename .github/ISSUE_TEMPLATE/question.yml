@@ -1,0 +1,67 @@
+name: ❓ Question
+description: Ask a question about using Research Paper Extractor
+title: "[QUESTION] "
+labels: ["question", "help wanted"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## ❓ Question
+
+        Have a question about using Research Paper Extractor? We're here to help!
+
+        **Before asking:**
+        - [ ] I have read the [README](https://github.com/Sreeram5678/Research-Paper-Extractor#readme)
+        - [ ] I have checked the [Usage Examples](USAGE_EXAMPLES.md)
+        - [ ] I have searched existing issues for similar questions
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Your Question
+      description: What would you like to know?
+      placeholder: "How do I download papers from a specific author? I've tried `python main.py search-by-author` but it returns no results."
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Provide any relevant context or what you've tried so far.
+      placeholder: |
+        I want to download all papers by Geoffrey Hinton. I've tried:
+        - `python main.py search-by-author "Geoffrey Hinton"`
+        - `python main.py search-by-author "hinton"`
+
+        But both return "No papers found". I know he has published many papers on arXiv.
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Question Category
+      options:
+        - Installation/Setup
+        - Usage/Commands
+        - Configuration
+        - Error/Debugging
+        - Feature Clarification
+        - Development/Contributing
+        - Other
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      options:
+        - Windows
+        - macOS
+        - Linux
+        - Other (please specify)
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Which version are you using?
+      placeholder: "1.0.0"
