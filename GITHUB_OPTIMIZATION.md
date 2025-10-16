@@ -12,8 +12,8 @@ Go to https://github.com/Sreeram5678/Research-Paper-Extractor/settings
 A powerful Python CLI tool that automatically searches and downloads research papers from arXiv based on topics, authors, or keywords. Perfect for researchers, students, and academics conducting literature reviews.
 
 ✨ Features: Smart search, batch download, category filtering, author search, interactive mode
-📦 Install: pip install research-paper-extractor
-🚀 Quick start: research-paper-extractor search "machine learning"
+📥 Install: Clone & run locally
+🚀 Quick start: git clone https://github.com/Sreeram5678/Research-Paper-Extractor
 ```
 
 **Website:** `https://github.com/Sreeram5678/Research-Paper-Extractor#readme`
@@ -48,13 +48,13 @@ In repository settings → Topics, add:
 Go to Releases → Create a new release
 
 **Tag:** `v1.0.0`
-**Title:** `🎉 First Official Release - Now on PyPI!`
+**Title:** `🎉 First Official Release - Open Source!`
 **Description:**
 ```markdown
 ## What's New
 
-✨ **PyPI Package Available!**
-Install with: `pip install research-paper-extractor`
+🚀 **Open Source Release!**
+Clone & contribute: `git clone https://github.com/Sreeram5678/Research-Paper-Extractor`
 
 🔬 **Core Features**
 - Smart search by keywords, authors, and categories
@@ -71,8 +71,10 @@ Install with: `pip install research-paper-extractor`
 
 ## Quick Start
 ```bash
-pip install research-paper-extractor
-research-paper-extractor search "machine learning" --max-results 5
+git clone https://github.com/Sreeram5678/Research-Paper-Extractor
+cd "Research Paper Extractor"
+pip install -r requirements.txt
+python main.py search "machine learning" --max-results 5
 ```
 
 ## Links
@@ -88,15 +90,15 @@ Go to repository main page → click "…" → Pin repository to your profile
 
 **Twitter/X Post:**
 ```
-🚀 Just published Research Paper Extractor on PyPI!
+🚀 Just open-sourced Research Paper Extractor!
 
 A Python tool that automatically downloads research papers from arXiv based on topics you specify.
 
 ✨ Features: Smart search, batch downloads, category filtering, interactive mode
-📦 Install: pip install research-paper-extractor
+📥 Install: Clone from GitHub
 🔗 https://github.com/Sreeram5678/Research-Paper-Extractor
 
-#Python #MachineLearning #Research #ArXiv #AcademicTools
+#Python #MachineLearning #Research #ArXiv #AcademicTools #OpenSource
 ```
 
 **Reddit Posts (choose 2-3 communities):**
@@ -110,36 +112,36 @@ Use the content from `.github/PROMOTION.md`
 
 ### Immediate (Week 1-2)
 - **GitHub Search**: Repository appears in "arxiv", "research papers", "academic tools" searches
-- **PyPI Discovery**: Users find your tool when searching PyPI for research tools
-- **Social Reach**: Initial wave of interested users from social media
+- **Direct Discovery**: Users find your repo through GitHub search and topic browsing
+- **Social Reach**: Initial wave of interested users from social media cloning your repo
 
 ### Medium-term (Month 1-3)
-- **Organic Growth**: More stars and forks from discoverability improvements
-- **Community Building**: Issues and feature requests from engaged users
-- **Network Effects**: GitHub's algorithm promotes repositories with activity
+- **Organic Growth**: More stars, forks, and clones from discoverability improvements
+- **Community Building**: Issues, feature requests, and contributions from engaged users
+- **Network Effects**: GitHub's algorithm promotes repositories with activity and engagement
 
 ### Long-term (3+ months)
-- **Search Rankings**: Better positioning in GitHub search results
-- **Ecosystem Integration**: Other researchers mention/recommend your tool
-- **Contributor Growth**: Attract contributors interested in academic tools
+- **Search Rankings**: Better positioning in GitHub search results and trending
+- **Ecosystem Integration**: Other researchers fork, contribute, and recommend your tool
+- **Contributor Growth**: Build a community of contributors improving the academic tool
 
 ## 🎯 Success Metrics to Track
 
 - **GitHub Stars**: Aim for 50+ in first month
-- **PyPI Downloads**: Track weekly download numbers
+- **Repository Clones**: Track weekly clone numbers (GitHub Insights)
 - **GitHub Traffic**: Monitor visitors from search vs direct
 - **Social Engagement**: Likes, retweets, Reddit karma
-- **Community Growth**: New issues, discussions, contributors
+- **Community Growth**: New issues, discussions, contributors, forks
 
 ## 🔄 Next Steps After Implementation
 
 Once you've completed these optimizations, the next high-impact actions are:
 
-1. **Create a demo/tutorial video** (YouTube/LinkedIn)
-2. **Write a blog post** about building the tool
-3. **Reach out to academic communities** (ResearchGate, Academia.edu)
-4. **Add more features** based on user feedback
-5. **Create GitHub Discussions** for community interaction
+1. **Create GitHub Discussions** for community interaction and questions
+2. **Create a demo/tutorial video** (YouTube/LinkedIn) showing the tool in action
+3. **Write a blog post** about building the tool and your journey
+4. **Reach out to academic communities** (ResearchGate, Academia.edu, university groups)
+5. **Add more features** based on user feedback and community requests
 
 ## 💡 Pro Tips
 

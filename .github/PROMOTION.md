@@ -4,7 +4,7 @@
 
 ### Post 1: Main Announcement
 ```
-🚀 Just published Research Paper Extractor on PyPI!
+🚀 Just open-sourced Research Paper Extractor!
 
 A Python tool that automatically downloads research papers from arXiv based on topics you specify.
 
@@ -15,10 +15,10 @@ A Python tool that automatically downloads research papers from arXiv based on t
 • Batch downloads
 • Interactive mode
 
-📦 Install: pip install research-paper-extractor
+📥 Install: git clone https://github.com/Sreeram5678/Research-Paper-Extractor
 🔗 https://github.com/Sreeram5678/Research-Paper-Extractor
 
-#Python #MachineLearning #Research #ArXiv #AcademicTools
+#Python #MachineLearning #Research #ArXiv #AcademicTools #OpenSource
 ```
 
 ### Post 2: Use Case Focused
@@ -48,7 +48,7 @@ Features:
 ✅ Organized file structure
 ✅ Open source & MIT licensed
 
-Star if you find it useful! ⭐
+Clone & contribute! 👥
 https://github.com/Sreeram5678/Research-Paper-Extractor
 ```
 
@@ -84,9 +84,9 @@ Key Features:
 
 Whether you're a PhD student conducting literature reviews or a researcher staying current with the field, this tool can save you hours of manual work.
 
-Available on PyPI: pip install research-paper-extractor
+Clone from GitHub: https://github.com/Sreeram5678/Research-Paper-Extractor
 
-#OpenSource #Python #Research #MachineLearning #AcademicResearch
+#OpenSource #Python #Research #MachineLearning #AcademicResearch #GitHub
 ```
 
 ### LinkedIn Hashtags
