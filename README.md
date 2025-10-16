@@ -220,7 +220,7 @@ Feel free to submit issues and enhancement requests!
 
 ## License
 
-For licensing information, please contact [Sreeram](mailto:sreeram.lagisetty@gmail.com).
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Complete Usage Guide
 
