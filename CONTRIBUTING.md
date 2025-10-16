@@ -94,7 +94,7 @@ When reporting bugs, please include:
 
 ## License
 
-For licensing information, please contact Sreeram at sreeram.lagisetty@gmail.com.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
