@@ -55,26 +55,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [2.0.0] - 2026-03-29
 
-### Planned Features
-- Web interface
-- Database integration for paper management
-- Citation export functionality
-- Advanced search filters
-- Paper metadata extraction
-- Integration with reference managers
-- Batch processing capabilities
-- API rate limit management
-- User preferences and settings
-- Paper recommendation system
+### Added
+- **Modular Architecture**: Reorganized into a collection of specialized modules.
+- **Library Management**: Persistent local paper tracking via SQLite (`library.py`).
+- **Citation Export**: Bulk export to BibTeX, RIS, and APA formats (`citation_exporter.py`).
+- **Research Analytics**: Rich statistical reports on author trends and keywords (`analytics.py`).
+- **Watchlists**: Automated alerts for new papers from favorite authors or topics (`watchlist.py`).
+- **Paper Summaries**: TF-IDF based abstract analysis and keypoint extraction (`summarizer.py`).
+- **Daily Digests**: Automated markdown digests of new research (`digest.py`).
+- **Discovery**: Find related papers via keyword relevance analysis (`related_papers.py`).
+- **Advanced Config**: INI-based user preferences management (`config_manager.py`).
+- **Batch Processing**: Download papers from text/CSV lists (`batch_downloader.py`).
+- **External lookups**: Semantic Scholar integration for citation counts (`citations.py`).
 
-### Planned Improvements
-- Performance optimizations
-- Better error handling
-- More comprehensive testing
-- CI/CD pipeline
-- Docker containerization
-- Performance monitoring
-- User analytics
-- Accessibility improvements
+### Improvements
+- Refactored `__init__.py` for better package discovery.
+- Cleaned up redundant instructions and metadata files from repository.
+- Improved documentation with comprehensive usage examples.
