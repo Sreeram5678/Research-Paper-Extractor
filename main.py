@@ -1200,5 +1200,40 @@ def history(limit, clear):
     click.echo(hist.format_history(limit))
 
 
+@cli.command('grep-pdf')
+@click.argument('query', required=True)
+@click.option('--path', '-p', default=None, help='File or directory to search (default: download_dir)')
+@click.option('--case-sensitive', '-i', is_flag=True, help='Perform case-sensitive search')
+def grep_pdf(query, path, case_sensitive):
+    """Search for text inside downloaded PDF files."""
+    search_path = path or config_manager.get_download_dir_from_config()
+    
+    if not os.path.exists(search_path):
+        click.echo(f"Error: Path '{search_path}' does not exist.", err=True)
+        return
+
+    click.echo(f"Searching for '{query}' in {search_path}...")
+    
+    if os.path.isfile(search_path):
+        results = {search_path: PDFManager.search_text(search_path, query, case_sensitive)}
+    else:
+        results = PDFManager.search_directory(search_path, query, case_sensitive)
+
+    if not results:
+        click.echo("No matches found.")
+        return
+
+    total_matches = sum(len(m) for m in results.values())
+    click.echo(f"Found {total_matches} matches across {len(results)} file(s):\n")
+
+    for file_path, matches in results.items():
+        click.echo(f"📄 {os.path.basename(file_path)}")
+        for match in matches[:5]: # Show first 5 matches per file
+            click.echo(f"   [Page {match['page']}] {match['context']}")
+        if len(matches) > 5:
+            click.echo(f"   ... and {len(matches) - 5} more matches in this file.")
+        click.echo("")
+
+
 if __name__ == '__main__':
     cli()
