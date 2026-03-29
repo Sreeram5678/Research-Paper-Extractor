@@ -254,7 +254,7 @@ class PaperDownloader:
             Path to the saved manifest file
         """
         import json
-        from datetime import datetime as dt
+        from datetime import datetime as dt, timezone
 
         downloaded_set = set(downloaded_files)
         records = []
@@ -270,7 +270,7 @@ class PaperDownloader:
             })
 
         manifest = {
-            'generated_at': dt.utcnow().isoformat() + 'Z',
+            'generated_at': dt.now(timezone.utc).isoformat(),
             'download_dir': str(self.download_dir),
             'total_papers': len(papers),
             'downloaded_count': len(downloaded_files),

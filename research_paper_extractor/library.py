@@ -6,7 +6,7 @@ Track downloaded papers, mark as read/unread, add tags and notes.
 import sqlite3
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Optional, Dict, Any, Tuple
 
@@ -95,7 +95,7 @@ class PaperLibrary:
                     paper.abs_url,
                     paper.pdf_url,
                     file_path,
-                    datetime.utcnow().isoformat(),
+                    datetime.now(timezone.utc).isoformat(),
                 ))
                 return conn.execute('SELECT changes()').fetchone()[0] > 0
         except sqlite3.Error as e:

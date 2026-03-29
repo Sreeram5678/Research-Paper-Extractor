@@ -5,7 +5,7 @@ Stored as a JSON file in the user's home directory.
 
 import json
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import List, Dict, Optional, Any
 
@@ -118,7 +118,7 @@ def check_for_new_papers(days: int = DEFAULT_LOOKBACK_DAYS,
     data = _load_watchlist()
     api = ArxivAPI()
     results: Dict[str, List[ArxivPaper]] = {}
-    cutoff = datetime.utcnow() - timedelta(days=days)
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
 
     for keyword in data.get('keywords', []):
         papers = api.search_recent(keyword, days=days, max_results=max_per_query)
@@ -132,7 +132,7 @@ def check_for_new_papers(days: int = DEFAULT_LOOKBACK_DAYS,
             results[f'author:{author}'] = new_papers
 
     # Update last check timestamp
-    data['last_check'] = datetime.utcnow().isoformat()
+    data['last_check'] = datetime.now(timezone.utc).isoformat()
     _save_watchlist(data)
 
     return results

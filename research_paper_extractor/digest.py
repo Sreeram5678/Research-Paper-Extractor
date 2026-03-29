@@ -4,7 +4,7 @@ Creates a markdown report of the latest papers in watched or specified categorie
 """
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Optional
 
@@ -32,11 +32,11 @@ def generate_digest(categories: Optional[List[str]] = None,
         Markdown-formatted digest string
     """
     api = ArxivAPI()
-    date_str = datetime.utcnow().strftime('%Y-%m-%d')
+    date_str = datetime.now(timezone.utc).strftime('%Y-%m-%d')
     sections: List[str] = []
 
     header = f'# 📰 arXiv Daily Digest — {date_str}\n\n'
-    header += f'> Generated: {datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")}  \n'
+    header += f'> Generated: {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")}  \n'
     header += f'> Papers from the last {days} day{"s" if days != 1 else ""}.\n\n'
     sections.append(header)
 
@@ -130,7 +130,7 @@ def save_digest(content: str, output_dir: Optional[str] = None) -> str:
     """
     out_dir = Path(output_dir) if output_dir else Path('.')
     out_dir.mkdir(parents=True, exist_ok=True)
-    date_str = datetime.utcnow().strftime('%Y-%m-%d')
+    date_str = datetime.now(timezone.utc).strftime('%Y-%m-%d')
     filename = f'arxiv_digest_{date_str}.md'
     filepath = out_dir / filename
     with open(filepath, 'w', encoding='utf-8') as f:
