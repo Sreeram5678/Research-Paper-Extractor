@@ -101,15 +101,22 @@ def analyze_papers(papers: List[ArxivPaper]) -> Dict[str, Any]:
     }
 
 
+def _create_bar_chart(data: Dict[str, Any], title: str, width: int = 40) -> List[str]:
+    """Create a simple ASCII bar chart."""
+    if not data:
+        return []
+    lines = [f"\n--- {title} ---"]
+    max_val = max(data.values()) if data.values() else 1
+    for key, count in data.items():
+        bar_len = int(count * width / max_val)
+        bar = '█' * bar_len
+        lines.append(f'  {str(key):<20} {bar} {count}')
+    return lines
+
+
 def format_analytics_report(stats: Dict[str, Any]) -> str:
     """
     Format an analytics stats dict into a human-readable text report.
-
-    Args:
-        stats: Output from analyze_papers()
-
-    Returns:
-        Multi-line string report
     """
     if stats.get('total', 0) == 0:
         return 'No papers to analyze.'
@@ -122,22 +129,17 @@ def format_analytics_report(stats: Dict[str, Any]) -> str:
     lines.append(f"Avg authors per paper : {stats.get('avg_authors_per_paper', 'N/A')}")
     lines.append(f"Most prolific author  : {stats.get('most_prolific_author', 'N/A')}")
 
-    lines.append('\n--- Papers by Year ---')
-    for year, count in sorted(stats.get('papers_by_year', {}).items()):
-        bar = '█' * min(count, 40)
-        lines.append(f'  {year}: {bar} {count}')
+    # Visual Charts
+    lines.extend(_create_bar_chart(stats.get('papers_by_year', {}), 'Papers by Year'))
+    
+    top_cats = {cat: count for cat, count in stats.get('top_categories', [])}
+    lines.extend(_create_bar_chart(top_cats, 'Top Categories'))
+    
+    lines.extend(_create_bar_chart(stats.get('collaboration_sizes', {}), 'Collaboration Size'))
 
     lines.append('\n--- Top 10 Authors ---')
     for i, (author, count) in enumerate(stats.get('top_authors', []), 1):
         lines.append(f'  {i:>2}. {author} ({count} paper{"s" if count > 1 else ""})')
-
-    lines.append('\n--- Top Categories ---')
-    for cat, count in stats.get('top_categories', []):
-        lines.append(f'  {cat:<20} {count} paper{"s" if count > 1 else ""}')
-
-    lines.append('\n--- Collaboration Size ---')
-    for size_label, count in stats.get('collaboration_sizes', {}).items():
-        lines.append(f'  {size_label:<20} {count} paper{"s" if count > 1 else ""}')
 
     lines.append('\n--- Top Title Keywords ---')
     kws = [f'{w}({c})' for w, c in stats.get('title_keywords', [])]
