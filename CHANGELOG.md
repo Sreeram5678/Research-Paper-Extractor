@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Paper Comparison Engine**: Side-by-side similarity analysis of paper titles, authors, and keywords.
 - **Recommendation Engine**: Personalized paper suggestions based on local library tags and search history.
 - **PDF Text Search**: Implemented `grep-pdf` to search inside downloaded PDF content.
+- **Duplicate Discovery**: Added `library cleanup` CLI command to find and remove duplicate papers in your local library.
 - **Library Exporting**: Added support for exporting the local library to BibTeX, CSV, and JSON formats.
 - **CLI Theming System**: Added 5 color themes (Cyan, Green, Blue, Yellow, White) for better terminal aesthetics.
 - **Webhooks**: Integrated Discord and Slack notifications for watchlist alerts.

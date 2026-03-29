@@ -372,6 +372,9 @@ python main.py library tag 1706.03762 "must-read" --remove
 # Remove a paper from library
 python main.py library remove 2301.07041
 
+# Find and remove duplicate papers globally
+python main.py library cleanup
+
 # Show library statistics
 python main.py library stats
 ```
