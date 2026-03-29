@@ -64,6 +64,22 @@ class PDFManager:
         return results
 
     @staticmethod
+    def search_directory(directory: str, query: str, case_sensitive: bool = False) -> Dict[str, list]:
+        """Searches all PDFs in a directory for a specific string."""
+        results = {}
+        if not os.path.exists(directory):
+            return results
+
+        for root, _, files in os.walk(directory):
+            for file in files:
+                if file.lower().endswith('.pdf'):
+                    path = os.path.join(root, file)
+                    matches = PDFManager.search_text(path, query, case_sensitive)
+                    if matches:
+                        results[path] = matches
+        return results
+
+    @staticmethod
     def extract_full_text(file_path: str) -> Optional[str]:
         """Extracts all text from a PDF file using pdfminer."""
         if not os.path.exists(file_path):
