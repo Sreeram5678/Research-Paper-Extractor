@@ -1,6 +1,6 @@
 """
-Config file manager using TOML-style INI for user preferences.
-Falls back to configparser for compatibility (no extra deps).
+Config file manager using INI format for user preferences.
+Uses RawConfigParser to avoid conflicts with % in date format strings.
 """
 
 import configparser
@@ -31,15 +31,15 @@ DEFAULTS = {
 }
 
 
-def _get_parser() -> configparser.ConfigParser:
-    """Return a ConfigParser pre-loaded with defaults."""
-    parser = configparser.ConfigParser()
+def _get_parser() -> configparser.RawConfigParser:
+    """Return a RawConfigParser pre-loaded with defaults."""
+    parser = configparser.RawConfigParser()
     for section, values in DEFAULTS.items():
         parser[section] = values
     return parser
 
 
-def load_config() -> configparser.ConfigParser:
+def load_config() -> configparser.RawConfigParser:
     """
     Load user config from disk, merging with defaults.
 
