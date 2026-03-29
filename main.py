@@ -958,6 +958,34 @@ def library_sync_metadata(arxiv_id: Optional[str], sync_all: bool):
     click.echo(f"✓ Finished syncing metadata for {synced_count} paper(s).")
 
 
+@library.command('analyze-keywords')
+@click.option('--limit', '-l', default=20, show_default=True, help='Number of top keywords to show')
+@click.option('--tag', '-t', default=None, help='Filter papers by tag')
+def library_analyze_keywords(limit: int, tag: Optional[str]):
+    """Perform keyword frequency analysis across library papers."""
+    from research_paper_extractor.summarizer import analyze_keywords_bulk
+    from tabulate import tabulate
+    
+    lib = PaperLibrary()
+    papers = lib.list_papers(tag=tag, limit=1000)
+    
+    if not papers:
+        click.echo("No papers found matching the filter.")
+        return
+        
+    click.echo(f"Analyzing keywords across {len(papers)} papers...")
+    top_keywords = analyze_keywords_bulk(papers, top_n=limit)
+    
+    if not top_keywords:
+        click.echo("Could not extract any keywords.")
+        return
+        
+    click.echo("\n── TOP KEYWORDS ──────────────────────────")
+    table_data = [[i+1, word, count] for i, (word, count) in enumerate(top_keywords)]
+    click.echo(tabulate(table_data, headers=['#', 'Keyword', 'Frequency'], tablefmt='simple'))
+    click.echo("──────────────────────────────────────────")
+
+
 @cli.command()
 @click.argument('id1', required=True)
 @click.argument('id2', required=True)
