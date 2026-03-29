@@ -22,26 +22,54 @@ MAX_FILENAME_LENGTH = 100
 # Rate limiting (to be respectful to arXiv servers)
 REQUEST_DELAY = 1.0  # seconds between requests
 
-# Search categories mapping (some popular ones)
+# Search categories mapping (comprehensive list of popular arXiv categories)
 ARXIV_CATEGORIES = {
-    'cs.AI': 'Artificial Intelligence',
-    'cs.LG': 'Machine Learning',
-    'cs.CV': 'Computer Vision and Pattern Recognition',
-    'cs.CL': 'Computation and Language',
-    'cs.NE': 'Neural and Evolutionary Computing',
+    # Computer Science
+    'cs.AI':  'Artificial Intelligence',
+    'cs.LG':  'Machine Learning',
+    'cs.CV':  'Computer Vision and Pattern Recognition',
+    'cs.CL':  'Computation and Language (NLP)',
+    'cs.NE':  'Neural and Evolutionary Computing',
+    'cs.RO':  'Robotics',
+    'cs.CR':  'Cryptography and Security',
+    'cs.DB':  'Databases',
+    'cs.DC':  'Distributed, Parallel, and Cluster Computing',
+    'cs.DS':  'Data Structures and Algorithms',
+    'cs.GT':  'Computer Science and Game Theory',
+    'cs.HC':  'Human-Computer Interaction',
+    'cs.IR':  'Information Retrieval',
+    'cs.IT':  'Information Theory',
+    'cs.NA':  'Numerical Analysis',
+    'cs.NI':  'Networking and Internet Architecture',
+    'cs.PL':  'Programming Languages',
+    'cs.SE':  'Software Engineering',
+    'cs.SY':  'Systems and Control',
+    # Statistics
     'stat.ML': 'Machine Learning (Statistics)',
-    'math.ST': 'Statistics Theory',
-    'physics.data-an': 'Data Analysis, Statistics and Probability',
-    'q-bio.QM': 'Quantitative Methods',
-    'econ.EM': 'Econometrics',
-    'cs.CR': 'Cryptography and Security',
-    'cs.DB': 'Databases',
-    'cs.IR': 'Information Retrieval',
-    'cs.SE': 'Software Engineering',
-    'cs.SY': 'Systems and Control',
+    'stat.AP': 'Applications (Statistics)',
+    'stat.ME': 'Methodology (Statistics)',
+    'stat.TH': 'Statistics Theory',
+    # Mathematics
+    'math.ST': 'Statistics Theory (Math)',
     'math.OC': 'Optimization and Control',
-    'stat.AP': 'Applications',
-    'physics.comp-ph': 'Computational Physics'
+    'math.PR': 'Probability',
+    'math.CO': 'Combinatorics',
+    'math.NA': 'Numerical Analysis',
+    # Physics
+    'physics.data-an':  'Data Analysis, Statistics and Probability',
+    'physics.comp-ph':  'Computational Physics',
+    'quant-ph':         'Quantum Physics',
+    'astro-ph.IM':      'Astrophysics — Instrumentation and Methods',
+    'cond-mat.dis-nn':  'Disordered Systems and Neural Networks',
+    # Biology / Medicine
+    'q-bio.QM':  'Quantitative Methods (Biology)',
+    'q-bio.NC':  'Neurons and Cognition',
+    'q-bio.GN':  'Genomics',
+    'eess.SP':   'Signal Processing',
+    'eess.AS':   'Audio and Speech Processing',
+    # Economics
+    'econ.EM':   'Econometrics',
+    'econ.GN':   'General Economics',
 }
 
 def get_download_dir():
