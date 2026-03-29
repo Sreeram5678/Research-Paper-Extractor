@@ -55,6 +55,7 @@ from research_paper_extractor.recommender import Recommender
 from research_paper_extractor.shell import InteractiveShell
 from research_paper_extractor.utils import themed_header, themed_print
 from research_paper_extractor import config_manager
+from research_paper_extractor.bibtex_parser import parse_bibtex_file, bib_entry_to_paper_obj
 
 # Set up logging
 logging.basicConfig(
@@ -940,15 +941,11 @@ def batch(batch_file: str, download_dir: Optional[str], max_per_query: int,
               help='Directory to save the digest markdown file')
 @click.option('--print-only', '-p', is_flag=True,
               help='Print to stdout instead of saving to file')
+@click.option('--format', '-f', type=click.Choice(['md', 'html']), default='md',
+              help='Output format (default: md)')
 def digest(categories: tuple, keywords: tuple, days: int,
-           max_per_query: int, output_dir: str, print_only: bool):
-    """Generate a markdown daily digest of recent arXiv papers.
-
-    \b
-    Examples:
-      python main.py digest -c cs.AI -c cs.LG -d 3
-      python main.py digest -k "diffusion models" -k "LLM" --print-only
-    """
+           max_per_query: int, output_dir: str, print_only: bool, format: str):
+    """Generate a daily digest of recent arXiv papers."""
     try:
         if not categories and not keywords:
             # Default to a few popular categories
@@ -966,7 +963,7 @@ def digest(categories: tuple, keywords: tuple, days: int,
         if print_only:
             click.echo(content)
         else:
-            filepath = save_digest(content, output_dir=output_dir)
+            filepath = save_digest(content, output_dir=output_dir, format=format)
             click.echo(f"✓ Digest saved to: {filepath}")
             line_count = content.count('\n')
             click.echo(f"  ({line_count} lines, {len(content)} characters)")
