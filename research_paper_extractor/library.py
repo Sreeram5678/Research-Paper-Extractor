@@ -253,3 +253,40 @@ class PaperLibrary:
                 lines.append(f"     Notes   : {p['notes'][:80]}")
         lines.append(f'\n{"=" * 70}')
         return '\n'.join(lines)
+    def export_to_csv(self, output_path: str) -> bool:
+        """Export the entire library to a CSV file."""
+        import csv
+        papers = self.list_papers(limit=10000)
+        if not papers:
+            return False
+        
+        try:
+            with open(output_path, 'w', newline='', encoding='utf-8') as f:
+                if not papers:
+                    return False
+                writer = csv.DictWriter(f, fieldnames=papers[0].keys())
+                writer.writeheader()
+                writer.writerows(papers)
+            return True
+        except Exception as e:
+            logger.error(f"Error exporting to CSV: {e}")
+            return False
+
+    def export_to_json(self, output_path: str) -> bool:
+        """Export the entire library to a JSON file."""
+        papers = self.list_papers(limit=10000)
+        if not papers:
+            return False
+            
+        try:
+            with open(output_path, 'w', encoding='utf-8') as f:
+                json.dump(papers, f, indent=4)
+            return True
+        except Exception as e:
+            logger.error(f"Error exporting to JSON: {e}")
+            return False
+
+    def get_file_path(self, arxiv_id: str) -> Optional[str]:
+        """Get the local file path for a paper."""
+        record = self.get_paper(arxiv_id)
+        return record.get('file_path') if record else None

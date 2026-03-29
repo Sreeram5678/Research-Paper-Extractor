@@ -769,6 +769,31 @@ def library_stats():
     click.echo("─────────────────────────────────────────")
 
 
+@library.command('export')
+@click.argument('filename', required=True)
+@click.option('--format', '-f', type=click.Choice(['csv', 'json']), default='csv', show_default=True)
+def library_export(filename, format):
+    """Export the entire paper library to CSV or JSON."""
+    lib = PaperLibrary()
+    
+    # Ensure extension
+    if not filename.endswith(f".{format}"):
+        filename += f".{format}"
+        
+    click.echo(f"Exporting library to {filename} ({format.upper()})...")
+    
+    success = False
+    if format == 'csv':
+        success = lib.export_to_csv(filename)
+    else:
+        success = lib.export_to_json(filename)
+        
+    if success:
+        click.echo(f"✓ Library exported successfully to: {filename}")
+    else:
+        click.echo("Error: Could not export library (is it empty?)", err=True)
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # FEATURE 7 — Batch download
 # ══════════════════════════════════════════════════════════════════════════════
