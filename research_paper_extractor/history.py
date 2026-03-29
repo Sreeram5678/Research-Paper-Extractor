@@ -73,3 +73,17 @@ class SearchHistory:
         
         lines.append("──────────────────────────────────────────")
         return "\n".join(lines)
+    def get_stats(self) -> Dict[str, Any]:
+        """Return search history statistics."""
+        if not self.history:
+            return {}
+        
+        queries = [entry['query'] for entry in self.history]
+        import collections
+        common = collections.Counter(queries).most_common(5)
+        
+        return {
+            "total_searches": len(self.history),
+            "unique_queries": len(set(queries)),
+            "top_queries": common
+        }
