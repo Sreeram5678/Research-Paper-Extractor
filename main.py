@@ -849,6 +849,25 @@ def library_export(filename, format):
         click.echo("Error: Could not export library (is it empty?)", err=True)
 
 
+@library.command('export-md')
+@click.argument('output_dir', type=click.Path())
+@click.option('--tag', '-t', default=None, help='Filter papers by tag')
+def library_export_md(output_dir: str, tag: Optional[str]):
+    """Export papers to Markdown files (Obsidian/Notion compatible)."""
+    from research_paper_extractor.markdown_exporter import export_library_to_markdown
+    
+    lib = PaperLibrary()
+    papers = lib.list_papers(tag=tag, limit=10000)
+    
+    if not papers:
+        click.echo("No papers found matching the filter.")
+        return
+        
+    click.echo(f"Exporting {len(papers)} papers to {output_dir}...")
+    count = export_library_to_markdown(papers, output_dir)
+    click.echo(f"✓ successfully exported {count} papers as Markdown.")
+
+
 @library.command('import-bib')
 @click.argument('bib_file', type=click.Path(exists=True))
 @click.option('--fetch-metadata', '-f', is_flag=True, help='Fetch full metadata from arXiv for each ID')
@@ -1283,10 +1302,16 @@ def pdf_info(path):
     click.echo('─' * 45)
 
 
-@cli.command('history')
+@cli.group('history')
+def history():
+    """View and manage your search history."""
+    pass
+
+
+@history.command('list')
 @click.option('--limit', '-n', default=20, show_default=True, help='Number of entries to show')
 @click.option('--clear', is_flag=True, help='Clear the search history')
-def history(limit, clear):
+def history_list(limit, clear):
     """View or clear your search history."""
     hist = SearchHistory()
     if clear:
@@ -1296,6 +1321,25 @@ def history(limit, clear):
         return
 
     click.echo(hist.format_history(limit))
+
+
+@history.command('stats')
+def history_stats():
+    """Display statistics about your search patterns."""
+    hist = SearchHistory()
+    stats = hist.get_stats()
+    
+    if not stats:
+        click.echo("No search history to analyze.")
+        return
+        
+    themed_header("Search Patterns Analytics")
+    themed_print(f"Total Searches  : {stats['total_searches']}", "info")
+    themed_print(f"Unique Queries  : {stats['unique_queries']}", "info")
+    
+    click.echo("\nTop 5 Most Frequent Queries:")
+    for query, count in stats['top_queries']:
+        click.echo(f"  - '{query}' ({count} times)")
 
 
 @cli.command('grep-pdf')
