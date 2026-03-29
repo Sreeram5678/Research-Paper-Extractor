@@ -220,17 +220,98 @@ class PaperDownloader:
         Returns:
             Summary string
         """
-        
+
         if not downloaded_files:
             return "No files were downloaded."
-        
+
         summary = f"\nSuccessfully downloaded {len(downloaded_files)} papers:\n"
         summary += "=" * 50 + "\n"
-        
+
         for i, filepath in enumerate(downloaded_files, 1):
             filename = Path(filepath).name
             file_size = Path(filepath).stat().st_size / (1024 * 1024)  # MB
             summary += f"{i}. {filename} ({file_size:.1f} MB)\n"
-        
+
         summary += f"\nAll files saved to: {self.download_dir}\n"
         return summary
+
+    def save_download_manifest(self,
+                                papers: list,
+                                downloaded_files: list,
+                                manifest_name: str = 'manifest.json') -> str:
+        """
+        Save a JSON manifest of search results and download status.
+
+        The manifest records every paper that was found, whether it was
+        downloaded successfully, and its local file path.
+
+        Args:
+            papers: List of ArxivPaper objects from the search
+            downloaded_files: List of file paths that were downloaded
+            manifest_name: Filename for the manifest (default: manifest.json)
+
+        Returns:
+            Path to the saved manifest file
+        """
+        import json
+        from datetime import datetime as dt
+
+        downloaded_set = set(downloaded_files)
+        records = []
+        for paper in papers:
+            # Find matching file by checking if the paper ID appears in any path
+            matched_path = next(
+                (fp for fp in downloaded_set if paper.id in fp), None
+            )
+            records.append({
+                **paper.to_dict(),
+                'downloaded': matched_path is not None,
+                'local_path': matched_path,
+            })
+
+        manifest = {
+            'generated_at': dt.utcnow().isoformat() + 'Z',
+            'download_dir': str(self.download_dir),
+            'total_papers': len(papers),
+            'downloaded_count': len(downloaded_files),
+            'papers': records,
+        }
+
+        manifest_path = self.download_dir / manifest_name
+        with open(manifest_path, 'w', encoding='utf-8') as f:
+            json.dump(manifest, f, indent=2, ensure_ascii=False)
+
+        logger.info(f"Manifest saved to: {manifest_path}")
+        return str(manifest_path)
+
+    def download_paper_with_retry(self,
+                                   paper,
+                                   custom_filename: Optional[str] = None,
+                                   max_retries: int = 3,
+                                   backoff_factor: float = 2.0) -> Optional[str]:
+        """
+        Download a single paper with exponential backoff retry logic.
+
+        Args:
+            paper: ArxivPaper to download
+            custom_filename: Optional custom filename
+            max_retries: Number of retry attempts on failure
+            backoff_factor: Multiplier for wait time between retries
+
+        Returns:
+            Path to downloaded file, or None if all attempts fail
+        """
+        wait = self.delay
+        for attempt in range(1, max_retries + 1):
+            result = self.download_paper(paper, custom_filename)
+            if result is not None:
+                return result
+            if attempt < max_retries:
+                logger.warning(
+                    f"Download attempt {attempt}/{max_retries} failed for {paper.id}. "
+                    f"Retrying in {wait:.1f}s..."
+                )
+                time.sleep(wait)
+                wait *= backoff_factor
+        logger.error(f"All {max_retries} download attempts failed for {paper.id}.")
+        return None
