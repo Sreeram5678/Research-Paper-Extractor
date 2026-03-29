@@ -34,6 +34,32 @@ class SSPaper:
         self.citation_count = data.get("citationCount", 0)
         self.venue = data.get("venue", "N/A")
 
+    @property
+    def id_v(self):
+        """Compatibility property for ArxivPaper."""
+        return self.id
+
+    def to_bibtex(self) -> str:
+        """Generate a BibTeX entry for this paper."""
+        name = self.authors[0].split()[-1] if self.authors else "Unknown"
+        year = self.published.year
+        bib_id = f"{name}{year}"
+        
+        lines = [
+            f"@article{{{bib_id},",
+            f"  title = {{{self.title}}},",
+            f"  author = {{{' and '.join(self.authors)}}},",
+            f"  journal = {{Semantic Scholar ID: {self.ss_id}}},",
+            f"  year = {{{year}}},",
+            f"  url = {{{self.abs_url}}}"
+        ]
+        if self.id and 'v' not in self.id: # Likely arXiv ID
+             lines.append(f"  eprint = {{{self.id}}},")
+             lines.append(f"  archivePrefix = {{arXiv}}")
+             
+        lines.append("}")
+        return "\n".join(lines)
+
     def to_dict(self):
         return {
             'id': self.id,
