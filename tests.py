@@ -663,6 +663,43 @@ class TestPaperLibrary(unittest.TestCase):
 
 
 # ===========================================================================
+# Test: Webhooks
+# ===========================================================================
+
+class TestWebhookManager(unittest.TestCase):
+
+    @patch('requests.post')
+    def test_send_simple_message(self, mock_post):
+        from research_paper_extractor.webhooks import WebhookManager
+        mock_post.return_value.status_code = 200
+        
+        wm = WebhookManager(url="http://test.webhook")
+        success = wm.send_simple_message("test message")
+        
+        self.assertTrue(success)
+        _, kwargs = mock_post.call_args
+        self.assertEqual(kwargs['json']['content'], "test message")
+
+    @patch('requests.post')
+    def test_send_notification_with_papers(self, mock_post):
+        from research_paper_extractor.webhooks import WebhookManager
+        mock_post.return_value.status_code = 200
+        p = _make_paper()
+        
+        wm = WebhookManager(url="http://test.webhook")
+        # Ensure paper has authors list
+        p.authors = ["Author A", "Author B"]
+        p.published = datetime.now()
+        
+        success = wm.send_notification("New Paper", "Check this out", papers=[p])
+        
+        self.assertTrue(success)
+        _, kwargs = mock_post.call_args
+        self.assertEqual(len(kwargs['json']['embeds']), 1)
+        self.assertEqual(kwargs['json']['embeds'][0]['title'], p.title)
+
+
+# ===========================================================================
 # Entry point
 # ===========================================================================
 
