@@ -1,77 +1,56 @@
-#  Research Paper Downloader - Usage Examples
+# Research Paper Extractor v2.0 — Usage Examples
 
-A comprehensive guide to using the arXiv Research Paper Downloader with automatic topic-based folder organization.
+A comprehensive guide to every command available in the Research Paper Extractor CLI.
 
-##  Quick Start
+## Table of Contents
 
-```bash
-# Activate virtual environment
-source rp/bin/activate
-
-# Basic search
-python main.py search "machine learning"
-
-# Preview results without downloading
-python main.py search "deep learning" --preview-only
-
-# Auto-download without confirmation
-python main.py search "neural networks" --auto-download
-```
-
----
-
-##  Table of Contents
-
-1. [Basic Search Commands](#1-basic-search-commands)
-2. [Search by Author](#2-search-by-author-commands)
-3. [Download by ID](#3-download-by-id-commands)
+1. [Search & Download](#1-search--download)
+2. [Download by ID](#2-download-by-id)
+3. [Search by Author](#3-search-by-author)
 4. [Interactive Mode](#4-interactive-mode)
-5. [Utility Commands](#5-utility-commands)
-6. [Advanced Examples](#6-advanced-examples)
-7. [Folder Organization](#7-folder-organization)
-8. [Pro Tips](#8-pro-tips)
+5. [Paper Info](#5-paper-info)
+6. [Open in Browser](#6-open-in-browser)
+7. [Abstract Summarizer](#7-abstract-summarizer)
+8. [Citation Export](#8-citation-export)
+9. [Research Analytics](#9-research-analytics)
+10. [Watchlists & Alerts](#10-watchlists--alerts)
+11. [Local Library](#11-local-library)
+12. [Batch Downloads](#12-batch-downloads)
+13. [Daily Digest](#13-daily-digest)
+14. [Citation Counts](#14-citation-counts)
+15. [Related Papers](#15-related-papers)
+16. [Configuration](#16-configuration)
+17. [Utility Commands](#17-utility-commands)
+18. [Research Workflow Examples](#18-research-workflow-examples)
 
 ---
 
-## 1. 🔍 Basic Search Commands
+## 1. Search & Download
 
-### Simple Search
+### Basic search
 ```bash
-# Basic search (creates folder: downloads/machine_learning/)
+# Download papers on a topic (creates downloads/machine_learning/)
 python main.py search "machine learning"
 
-# Other topic examples
-python main.py search "deep learning"
-python main.py search "computer vision"
-python main.py search "natural language processing"
-python main.py search "reinforcement learning"
-```
-
-### Control Number of Results
-```bash
-# Limit results
-python main.py search "neural networks" --max-results 5
+# Limit number of results
+python main.py search "deep learning" --max-results 5
 python main.py search "quantum computing" -n 3
-
-# Get more results
-python main.py search "artificial intelligence" --max-results 20
 ```
 
-### Preview Mode (No Downloads)
+### Preview before downloading
 ```bash
-# Preview only - see results without downloading
-python main.py search "blockchain" --preview-only
-python main.py search "cybersecurity" -p
+# See results without downloading anything
+python main.py search "neural networks" --preview-only
+python main.py search "computer vision" -p
 ```
 
-### Auto-Download Mode
+### Auto-download without confirmation
 ```bash
-# Download all results without confirmation
-python main.py search "robotics" --auto-download
-python main.py search "bioinformatics" -a
+python main.py search "reinforcement learning" --auto-download
+python main.py search "robotics" -a
 ```
 
-### Category Filtering
+### Filter by arXiv category
 ```bash
 # Single category
 python main.py search "machine learning" --categories cs.LG
@@ -79,319 +58,602 @@ python main.py search "machine learning" --categories cs.LG
 # Multiple categories
 python main.py search "AI research" -c cs.AI -c cs.LG -c cs.CV
 
-# Available categories: cs.AI, cs.LG, cs.CV, cs.CL, cs.NE, stat.ML, etc.
-python main.py categories  # See full list
+# List all available categories
+python main.py categories
 ```
 
-### Sort Options
+### Sort results
 ```bash
-# Sort by relevance (default)
-python main.py search "transformers" --sort-by relevance
-
-# Sort by date
+python main.py search "transformers" --sort-by relevance       # default
 python main.py search "GPT models" --sort-by lastUpdatedDate
 python main.py search "BERT" --sort-by submittedDate
 ```
 
-### Recent Papers Only
+### Recent papers only
 ```bash
-# Papers from last 7 days
-python main.py search "ChatGPT" --recent-days 7
-
-# Papers from last month
-python main.py search "large language models" --recent-days 30
+python main.py search "large language models" --recent-days 7
+python main.py search "diffusion models" --recent-days 30 -n 10
 ```
 
-### Custom Download Directory
+### Add to library automatically
 ```bash
-# Specify custom directory
+# Download and store in local library at the same time
+python main.py search "federated learning" --auto-download --add-to-library
+python main.py search "graph neural networks" -a -l
+```
+
+### Save a download manifest
+```bash
+# Creates a JSON file listing every paper downloaded in the session
+python main.py search "attention mechanism" -a --manifest
+python main.py search "computer vision" -a -m
+```
+
+### Custom download directory
+```bash
 python main.py search "federated learning" --download-dir ~/Research/Papers
-python main.py search "edge computing" -d /path/to/custom/directory
+python main.py search "edge computing" -d /path/to/papers
 ```
 
-### Combined Options
+### Combining options
 ```bash
-# Complex search with multiple options
 python main.py search "graph neural networks" \
   --max-results 10 \
-  --categories cs.LG cs.AI \
+  --categories cs.LG \
   --sort-by lastUpdatedDate \
   --recent-days 30 \
-  --auto-download
+  --auto-download \
+  --add-to-library \
+  --manifest
 ```
 
 ---
 
-## 2. 👤 Search by Author Commands
+## 2. Download by ID
 
-### Basic Author Search
 ```bash
-# Search by author (creates folder: downloads/author_geoffrey_hinton/)
+# Download a specific paper by arXiv ID
+python main.py download-by-id 1706.03762    # Attention Is All You Need
+python main.py download-by-id 1412.6980    # Adam optimizer
+
+# Custom filename
+python main.py download-by-id 1706.03762 --filename "attention_is_all_you_need"
+python main.py download-by-id 2301.07041 -f "my_paper"
+
+# Custom directory
+python main.py download-by-id 1706.03762 -d ~/Important_Papers
+```
+
+---
+
+## 3. Search by Author
+
+```bash
+# Find papers by a researcher
 python main.py search-by-author "Geoffrey Hinton"
 python main.py search-by-author "Yann LeCun"
 python main.py search-by-author "Andrew Ng"
-python main.py search-by-author "Ian Goodfellow"
-```
 
-### Author Search with Options
-```bash
-# Limit results for prolific authors
+# Limit results (useful for prolific authors)
 python main.py search-by-author "Yoshua Bengio" --max-results 5
 
-# Preview author's papers
+# Preview only
 python main.py search-by-author "Fei-Fei Li" --preview-only
 
-# Get many papers from an author
-python main.py search-by-author "Jürgen Schmidhuber" -n 20
-```
-
-### Custom Directory for Author Papers
-```bash
-# Organize by research group
-python main.py search-by-author "Pieter Abbeel" -d ~/Research/Berkeley_AI
+# Save to a specific folder
 python main.py search-by-author "Demis Hassabis" -d ~/Research/DeepMind
 ```
 
 ---
 
-## 3. 📄 Download by ID Commands
+## 4. Interactive Mode
 
-### Basic Paper Download
 ```bash
-# Download specific papers (creates folder: downloads/paper_ID/)
-python main.py download-by-id "1706.03762"  # Attention Is All You Need
-python main.py download-by-id "2301.07041"  # Example arXiv ID
-python main.py download-by-id "1412.6980"   # Adam optimizer paper
-```
-
-### Custom Filename
-```bash
-# Rename downloaded file
-python main.py download-by-id "1706.03762" --filename "attention_mechanism"
-python main.py download-by-id "2301.07041" -f "my_research_paper"
-```
-
-### Custom Directory
-```bash
-# Download to specific location
-python main.py download-by-id "1706.03762" -d ~/Important_Papers
-```
-
----
-
-## 4. 🎮 Interactive Mode
-
-### Start Interactive Session
-```bash
-# Interactive mode (creates folder: downloads/interactive_QUERY/)
+# Start interactive session with an initial query
 python main.py interactive --query "transformers"
 python main.py interactive -q "machine learning"
-```
 
-### Interactive with Custom Settings
-```bash
-# Set max results and directory
+# Set max results and directory upfront
 python main.py interactive -q "deep learning" -n 15 -d ~/Research
-```
 
-### Interactive Workflow
-```bash
-# Start interactive mode
-python main.py interactive -q "neural networks"
-
-# Then follow prompts:
-# - View numbered list of papers
-# - Type 'all' to download all
-# - Type '1,3,5' to download specific papers
-# - Type 'new' to search different topic
-# - Type 'none' to skip downloads
+# In the interactive session:
+#   'all'   → download all papers found
+#   '1,3,5' → download papers 1, 3, and 5
+#   'new'   → start a new search
+#   'none'  → skip downloads and continue
 ```
 
 ---
 
-## 5. 🛠️ Utility Commands
+## 5. Paper Info
 
-### List Available Categories
+Display full paper metadata without downloading anything:
+
 ```bash
-# See all arXiv categories
-python main.py categories
+# Show title, authors, categories, abstract preview, and URLs
+python main.py info 1706.03762
+
+# Show the full abstract
+python main.py info 2301.07041 --full-abstract
+python main.py info 2301.07041 -a
+
+# Show a TF-IDF summary of the abstract
+python main.py info 2301.07041 --summarize
+python main.py info 2301.07041 -s
 ```
 
-### Version Information
+---
+
+## 6. Open in Browser
+
 ```bash
+# Open the abstract page in your default browser
+python main.py open 1706.03762
+
+# Open the PDF directly
+python main.py open 1706.03762 --pdf
+```
+
+---
+
+## 7. Abstract Summarizer
+
+Extract key points from paper abstracts using TF-IDF — no AI API needed:
+
+```bash
+# Summarize a single paper by arXiv ID
+python main.py summarize 1706.03762
+
+# Control the number of key points and keywords
+python main.py summarize 2301.07041 --sentences 5 --keywords 10
+python main.py summarize 2301.07041 -s 5 -k 10
+
+# Summarize papers from a search query
+python main.py summarize "attention mechanism" --is-query
+python main.py summarize "graph neural networks" --is-query -n 3 -q
+```
+
+---
+
+## 8. Citation Export
+
+Export paper metadata in your preferred citation format:
+
+```bash
+# Default: BibTeX printed to stdout
+python main.py export "transformer architecture"
+
+# Save to a .bib file
+python main.py export "transformers NLP" -f bibtex -o my_refs.bib
+
+# RIS format (Zotero, EndNote, Mendeley)
+python main.py export "graph neural networks" -f ris -o papers.ris
+
+# APA 7th edition
+python main.py export "deep learning survey" -f apa
+
+# Plain text numbered references
+python main.py export "attention mechanism" -f plain -o refs.txt
+
+# Combine with category filters
+python main.py export "machine learning" -c cs.LG -n 20 -f bibtex -o ml_refs.bib
+```
+
+**Supported formats:** `bibtex`, `ris`, `apa`, `plain`
+
+---
+
+## 9. Research Analytics
+
+Analyze a set of search results for statistical insights:
+
+```bash
+# Analyze papers on a topic (50 papers by default)
+python main.py analyze "machine learning"
+
+# Analyze more papers for richer stats
+python main.py analyze "deep learning" --max-results 100
+
+# Filter by category before analyzing
+python main.py analyze "computer vision" -c cs.CV -n 80
+
+# Save the report to a file
+python main.py analyze "NLP 2024" --output analytics_report.txt
+```
+
+The report includes:
+- Publication trends by year (ASCII bar chart)
+- Top 10 authors
+- Top categories
+- Collaboration size distribution (solo / small / medium / large teams)
+- Top title keywords
+- Top abstract keywords
+
+---
+
+## 10. Watchlists & Alerts
+
+Subscribe to keywords and authors, then check for new papers on demand.
+
+### Managing your watchlist
+```bash
+# Add a keyword
+python main.py watch add-keyword "diffusion models"
+python main.py watch add-keyword "federated learning"
+
+# Add an author
+python main.py watch add-author "Geoffrey Hinton"
+python main.py watch add-author "Yann LeCun"
+
+# View your watchlist
+python main.py watch list
+
+# Remove entries
+python main.py watch remove-keyword "diffusion models"
+python main.py watch remove-author "Geoffrey Hinton"
+
+# Clear everything
+python main.py watch clear
+```
+
+### Checking for new papers
+```bash
+# Check for papers from the last 7 days (default)
+python main.py check-alerts
+
+# Check a custom time window
+python main.py check-alerts --days 3
+python main.py check-alerts --days 14
+
+# Fetch up to 20 papers per query
+python main.py check-alerts -n 20
+
+# Automatically download all found papers
+python main.py check-alerts --download --download-dir ~/Alerts
+```
+
+---
+
+## 11. Local Library
+
+A persistent SQLite library to track your paper reading list:
+
+### Adding papers
+```bash
+python main.py library add 1706.03762
+python main.py library add 2301.07041
+
+# Or add automatically when searching
+python main.py search "transformers" -a -l
+```
+
+### Listing & filtering
+```bash
+# List all papers
+python main.py library list
+
+# Show only unread papers
+python main.py library list --unread
+
+# Show only read papers
+python main.py library list --read
+
+# Filter by tag
+python main.py library list --tag "must-read"
+
+# Filter by minimum rating
+python main.py library list --rating 4
+
+# Limit results
+python main.py library list -n 20
+```
+
+### Organizing papers
+```bash
+# Mark as read
+python main.py library mark-read 1706.03762
+
+# Mark as unread
+python main.py library mark-read 1706.03762 --unread
+
+# Rate a paper (1–5 stars)
+python main.py library rate 1706.03762 5
+python main.py library rate 2301.07041 3
+
+# Add a personal note
+python main.py library note 1706.03762 "Foundational paper — must cite in chapter 2"
+
+# Tag a paper
+python main.py library tag 1706.03762 "must-read"
+python main.py library tag 2301.07041 "NLP"
+
+# Remove a tag
+python main.py library tag 1706.03762 "must-read" --remove
+```
+
+### Removing & statistics
+```bash
+# Remove a paper from library
+python main.py library remove 2301.07041
+
+# Show library statistics
+python main.py library stats
+```
+
+---
+
+## 12. Batch Downloads
+
+Process a list of arXiv IDs and/or search queries from a file:
+
+### Creating and using batch files
+```bash
+# Generate a sample batch file to see the format
+python main.py batch --create-sample my_papers.txt
+
+# Download all papers in the batch file
+python main.py batch my_papers.txt
+
+# Preview without downloading
+python main.py batch my_papers.txt --preview-only
+
+# Set max results per query
+python main.py batch my_papers.txt --max-per-query 10
+
+# Download to a specific directory
+python main.py batch my_papers.txt -d ~/BatchPapers
+
+# Add to library automatically
+python main.py batch my_papers.txt --add-to-library
+```
+
+### Batch file format (`.txt`)
+```
+# Lines starting with # are comments
+
+# arXiv IDs are downloaded directly
+1706.03762
+2301.07041
+1412.6980
+
+# Anything else is treated as a search query
+attention mechanism transformers
+graph neural networks
+diffusion models survey
+```
+
+### Batch file format (`.csv`)
+```csv
+id,1706.03762
+id,2301.07041
+query,attention mechanism
+query,reinforcement learning survey
+```
+
+---
+
+## 13. Daily Digest
+
+Auto-generate a markdown digest of the latest papers:
+
+```bash
+# Default: cs.AI, cs.LG, cs.CL from the last 1 day
+python main.py digest
+
+# Specify categories
+python main.py digest -c cs.AI -c cs.CV -c cs.RO
+
+# Specify keywords instead
+python main.py digest -k "diffusion models" -k "LLM alignment"
+
+# Mix categories and keywords
+python main.py digest -c cs.LG -k "foundation models"
+
+# Extend the lookback window
+python main.py digest -d 3       # last 3 days
+python main.py digest -d 7       # last week
+
+# More papers per category/keyword
+python main.py digest -n 10
+
+# Print to terminal instead of saving
+python main.py digest --print-only
+python main.py digest -p
+
+# Save to a specific directory
+python main.py digest --output-dir ~/Digests
+```
+
+---
+
+## 14. Citation Counts
+
+Look up citation counts from Semantic Scholar:
+
+```bash
+# Look up a single paper
+python main.py citations 1706.03762 --is-id
+python main.py citations 2301.07041 -i
+
+# Look up citations for papers matching a query
+python main.py citations "attention is all you need" -n 5
+python main.py citations "BERT language model" -n 10
+```
+
+---
+
+## 15. Related Papers
+
+Find papers related to one you already have using TF-IDF keyword extraction:
+
+```bash
+# Find related papers for a given arXiv ID
+python main.py related 1706.03762
+
+# Get more results
+python main.py related 1706.03762 --max-results 20
+python main.py related 1706.03762 -n 20
+
+# Find and download related papers
+python main.py related 2301.07041 --download
+python main.py related 2301.07041 -d --download-dir ~/Related
+```
+
+---
+
+## 16. Configuration
+
+Persistent settings stored in `~/.arxiv_config.ini`:
+
+```bash
+# View all current settings
+python main.py config show
+
+# Set default max results
+python main.py config set general max_results 20
+
+# Set default download directory
+python main.py config set general download_dir ~/Papers
+
+# Toggle abstract preview
+python main.py config set display show_abstract_preview true
+
+# Reset everything to defaults
+python main.py config reset
+```
+
+---
+
+## 17. Utility Commands
+
+```bash
+# List all available arXiv categories
+python main.py categories
+
 # Check version
 python main.py --version
-```
 
-### Help Information
-```bash
-# General help
+# Get help on any command
 python main.py --help
-
-# Command-specific help
 python main.py search --help
-python main.py search-by-author --help
-python main.py download-by-id --help
-python main.py interactive --help
+python main.py library --help
+python main.py watch --help
+python main.py config --help
 ```
 
 ---
 
-## 6. 🎯 Advanced Examples
+## 18. Research Workflow Examples
 
-### Research Workflow Example
+### Literature Review Workflow
 ```bash
-# 1. Preview papers in a field
-python main.py search "federated learning" --preview-only
+# 1. Preview what's available
+python main.py search "federated learning" -p -n 20
 
-# 2. Download promising papers
-python main.py search "federated learning" --max-results 5 --auto-download
+# 2. Download the most relevant papers with a manifest
+python main.py search "federated learning" -c cs.LG -n 10 -a -l -m
 
-# 3. Get papers from key researchers
-python main.py search-by-author "Peter Kairouz" --max-results 3
+# 3. Get seminal papers by ID
+python main.py download-by-id 1602.05629   # Original FL paper
 
-# 4. Download seminal papers
-python main.py download-by-id "1602.05629"  # Federated Learning paper
+# 4. Export all for reference manager
+python main.py export "federated learning" -c cs.LG -f bibtex -o fl_refs.bib
+
+# 5. Run analytics to understand the field
+python main.py analyze "federated learning" -c cs.LG -n 100
 ```
 
-### Survey Multiple Topics
+### Stay Current Workflow
 ```bash
-# Quick survey of related fields
-python main.py search "computer vision" -n 3 -p
-python main.py search "natural language processing" -n 3 -p
-python main.py search "speech recognition" -n 3 -p
+# Subscribe to topics and authors
+python main.py watch add-keyword "diffusion models"
+python main.py watch add-keyword "LLM alignment"
+python main.py watch add-author "Ilya Sutskever"
+
+# Run daily (or add to a cron job)
+python main.py check-alerts --days 1 --download
+
+# Or generate a weekly digest instead
+python main.py digest -k "diffusion models" -k "LLM" -d 7 -o ~/Weekly
 ```
 
-### Build Research Collection
+### Paper Deep-Dive Workflow
 ```bash
-# Download comprehensive collection
-python main.py search "transformer architecture" -n 10 -a
-python main.py search "attention mechanisms" -n 8 -a
-python main.py search "BERT variations" -n 5 -a
+# 1. Inspect a paper before downloading
+python main.py info 1706.03762 --summarize
+
+# 2. Open in browser for a quick scan
+python main.py open 1706.03762
+
+# 3. Download it and add to library
+python main.py download-by-id 1706.03762
+python main.py library add 1706.03762
+
+# 4. Rate and annotate
+python main.py library rate 1706.03762 5
+python main.py library note 1706.03762 "Core architecture paper — cite in intro"
+python main.py library tag 1706.03762 "must-read"
+
+# 5. Discover follow-on work
+python main.py related 1706.03762 -n 15
+
+# 6. Check how many citations it has
+python main.py citations 1706.03762 --is-id
 ```
 
-### Recent Developments Tracking
+### Batch Collection Workflow
 ```bash
-# Track latest developments
-python main.py search "large language models" --recent-days 7 -n 5
-python main.py search "GPT-4" --recent-days 14 -n 3
-python main.py search "multimodal AI" --recent-days 30 -n 10
+# Create a batch file with your reading list
+python main.py batch --create-sample reading_list.txt
+
+# Edit reading_list.txt, then download everything at once
+python main.py batch reading_list.txt --add-to-library -d ~/ReadingList
+
+# Export the whole batch as citations
+python main.py export "survey deep learning" -f bibtex -o all_refs.bib
 ```
 
 ---
 
-## 7. 📁 Folder Organization
+## Quick Reference
 
-### Automatic Folder Creation
-Every search automatically creates organized folders:
-
-```
-downloads/
-├── machine_learning/              # search "machine learning"
-├── deep_learning/                 # search "deep learning"
-├── computer_vision/               # search "computer vision"
-├── natural_language_processing/   # search "natural language processing"
-├── author_geoffrey_hinton/        # search-by-author "Geoffrey Hinton"
-├── author_yann_lecun/            # search-by-author "Yann LeCun"
-├── paper_1706.03762/             # download-by-id "1706.03762"
-├── paper_2301.07041/             # download-by-id "2301.07041"
-├── interactive_transformers/      # interactive mode with "transformers"
-└── federated_learning/           # search "federated learning"
-```
-
-### Folder Naming Rules
-- Spaces become underscores: `"machine learning"` → `machine_learning/`
-- Special characters removed: `"AI & ML"` → `ai_ml/`
-- Lowercase conversion: `"Deep Learning"` → `deep_learning/`
-- Length limited to 50 characters
-- Author searches prefixed: `"John Doe"` → `author_john_doe/`
-- Paper IDs prefixed: `"1234.5678"` → `paper_1234.5678/`
-
----
-
-## 8. 💡 Pro Tips
-
-### Efficiency Tips
-```bash
-# Use preview to filter before downloading
-python main.py search "broad topic" -p
-# Then search with specific terms based on preview
-
-# Combine recent and category filters for focused search
-python main.py search "AI safety" -c cs.AI --recent-days 30 -n 5
-```
-
-### Organization Strategies
-```bash
-# Create themed collections
-python main.py search "computer vision basics" -d ~/Learning/CV_Fundamentals
-python main.py search "advanced CV techniques" -d ~/Learning/CV_Advanced
-
-# Separate by research phase
-python main.py search "background reading" -d ~/Research/Literature_Review
-python main.py search "methodology papers" -d ~/Research/Methods
-```
-
-### Batch Operations
-```bash
-# Use auto-download for known good queries
-python main.py search "survey papers machine learning" -a
-python main.py search "tutorial deep learning" -a
-
-# Chain commands for comprehensive coverage
-python main.py search "topic A" -n 5 -a && \
-python main.py search "topic B" -n 5 -a && \
-python main.py search "topic C" -n 5 -a
-```
-
-### Quality Control
-```bash
-# Start with small numbers and preview
-python main.py search "new research area" -n 3 -p
-
-# Use recent-days to get cutting-edge work
-python main.py search "emerging technology" --recent-days 7
-
-# Focus on specific venues with categories
-python main.py search "conference papers" -c cs.LG -c cs.AI
-```
-
----
-
-## 🔗 Quick Reference
-
-| Command Pattern | Example | Creates Folder |
-|----------------|---------|----------------|
-| `search "topic"` | `search "ML"` | `downloads/ml/` |
-| `search-by-author "name"` | `search-by-author "Hinton"` | `downloads/author_hinton/` |
-| `download-by-id "ID"` | `download-by-id "1706.03762"` | `downloads/paper_1706.03762/` |
-| `interactive -q "topic"` | `interactive -q "AI"` | `downloads/interactive_ai/` |
+| Command | Short Form | Description |
+|---------|-----------|-------------|
+| `search "topic"` | — | Search & download |
+| `download-by-id ID` | — | Fetch by arXiv ID |
+| `search-by-author "Name"` | — | Papers by author |
+| `interactive -q "topic"` | — | Guided session |
+| `info ID` | — | Metadata only |
+| `open ID` | — | Open in browser |
+| `summarize ID` | — | Key-point summary |
+| `export "query" -f bibtex` | — | Export citations |
+| `analyze "query"` | — | Analytics report |
+| `watch add-keyword TERM` | — | Subscribe to topic |
+| `check-alerts` | — | Fetch new papers |
+| `library add ID` | — | Add to library |
+| `library list` | — | Browse library |
+| `batch FILE` | — | Bulk download |
+| `digest` | — | Daily digest |
+| `citations ID -i` | — | Citation count |
+| `related ID` | — | Similar papers |
+| `config show` | — | View settings |
 
 ### Common Flags
-- `-n, --max-results NUMBER` - Limit number of results
-- `-p, --preview-only` - Show results without downloading
-- `-a, --auto-download` - Download without confirmation
-- `-d, --download-dir PATH` - Custom download directory
-- `-c, --categories CAT` - Filter by arXiv category
-- `--recent-days NUMBER` - Only recent papers
-- `--sort-by TYPE` - Sort results (relevance/date)
-
----
-
-## 📞 Need Help?
-
-```bash
-# Get help for any command
-python main.py --help
-python main.py COMMAND --help
-
-# List available categories
-python main.py categories
-
-# Check version
-python main.py --version
-```
+| Flag | Short | Applies To | Description |
+|------|-------|-----------|-------------|
+| `--max-results N` | `-n` | search, analyze, export | Number of papers |
+| `--preview-only` | `-p` | search, batch | No download |
+| `--auto-download` | `-a` | search | Skip confirmation |
+| `--download-dir PATH` | `-d` | search, batch | Save location |
+| `--categories CAT` | `-c` | search, export, analyze | arXiv category filter |
+| `--recent-days N` | — | search | Papers from last N days |
+| `--add-to-library` | `-l` | search, batch | Save to local library |
+| `--manifest` | `-m` | search | Save a JSON manifest |
+| `--is-id` | `-i` | citations | Treat arg as arXiv ID |
+| `--is-query` | `-q` | summarize | Treat arg as search query |
 
 ---
 
 *Happy researching! 🎓📖*
+
+For more help: `python main.py COMMAND --help`
