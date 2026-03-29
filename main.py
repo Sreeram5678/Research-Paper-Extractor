@@ -52,6 +52,7 @@ from research_paper_extractor.semantic_scholar import SemanticScholarAPI
 from research_paper_extractor.webhooks import WebhookManager
 from research_paper_extractor.comparison import PaperComparator
 from research_paper_extractor.recommender import Recommender
+from research_paper_extractor.shell import InteractiveShell
 from research_paper_extractor.utils import themed_header, themed_print
 from research_paper_extractor import config_manager
 
@@ -741,20 +742,55 @@ def library_note(arxiv_id: str, note: str):
     else:
         click.echo(f"Paper '{arxiv_id}' not found in library.")
 
-
 @library.command('tag')
 @click.argument('arxiv_id', required=True)
 @click.argument('tag', required=True)
-@click.option('--remove', is_flag=True, help='Remove this tag instead of adding')
-def library_tag(arxiv_id: str, tag: str, remove: bool):
-    """Add or remove a tag on a library paper."""
+def library_tag(arxiv_id: str, tag: str):
+    """Add a tag to a library paper."""
     lib = PaperLibrary()
-    if remove:
-        lib.remove_tag(arxiv_id, tag)
+    if lib.add_tag(arxiv_id, tag):
+        click.echo(f"✓ Added tag '{tag}' to {arxiv_id}.")
+    else:
+        click.echo(f"Paper '{arxiv_id}' not found in library.")
+
+
+@library.command('bulk-tag')
+@click.argument('tag', required=True)
+@click.argument('arxiv_ids', nargs=-1, required=True)
+def library_bulk_tag(tag, arxiv_ids):
+    """Add a tag to multiple library papers at once."""
+    lib = PaperLibrary()
+    count = lib.add_tags_bulk(list(arxiv_ids), tag)
+    click.echo(f"✓ Added tag '{tag}' to {count} paper(s).")
+
+
+@library.command('untag')
+@click.argument('arxiv_id', required=True)
+@click.argument('tag', required=True)
+def library_untag(arxiv_id: str, tag: str):
+    """Remove a tag on a library paper (alias for tag --remove)."""
+    lib = PaperLibrary()
+    if lib.remove_tag(arxiv_id, tag):
         click.echo(f"✓ Removed tag '{tag}' from {arxiv_id}.")
     else:
-        lib.add_tag(arxiv_id, tag)
-        click.echo(f"✓ Added tag '{tag}' to {arxiv_id}.")
+        click.echo(f"Paper '{arxiv_id}' or tag '{tag}' not found.")
+
+
+@library.command('tags')
+def library_tags():
+    """List all unique tags in your library."""
+    lib = PaperLibrary()
+    tags = lib.get_all_tags()
+    if not tags:
+        click.echo("No tags found in your library.")
+        return
+    
+    click.echo("\n── Library Tags ──────────────────────────")
+    for t in tags:
+        # Count papers with this tag
+        papers = lib.list_papers(tag=t, limit=1000)
+        click.echo(f"  • {t:<20} ({len(papers)} papers)")
+    click.echo("──────────────────────────────────────────")
 
 
 @library.command('remove')
@@ -1285,6 +1321,14 @@ def recommend_papers(limit):
     for i, p in enumerate(results, 1):
         themed_print(f"{i}. {p.title}", "info")
         click.echo(f"   ID: {p.id} | {p.abs_url}\n")
+
+
+@cli.command('shell')
+@click.pass_context
+def shell_mode(ctx):
+    """Start an interactive shell session."""
+    shell = InteractiveShell(cli)
+    shell.start()
 
 
 if __name__ == '__main__':
