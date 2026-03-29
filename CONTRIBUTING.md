@@ -42,13 +42,22 @@ Thank you for your interest in contributing to Research Paper Extractor! This do
 ```
 research_paper_extractor/
 ├── __init__.py          # Package initialization and exports
-├── arxiv_api.py         # arXiv API interface
-├── downloader.py        # Paper downloader
-└── config.py            # Configuration settings
-
-main.py                  # CLI interface
-setup.py                 # Package setup
-requirements.txt          # Dependencies
+├── arxiv_api.py         # arXiv API interface client
+├── downloader.py        # PDF downloader with progress tracking
+├── config.py            # Package constants and helpers
+├── citation_exporter.py # Citation formats (BibTeX, RIS, etc.)
+├── analytics.py          # Paper collection statistics
+├── summarizer.py         # Abstract keyword extraction
+├── watchlist.py          # Author and keyword alerts
+├── library.py            # Local SQLite paper management
+├── config_manager.py     # INI-based settings management
+├── batch_downloader.py   # Large-scale file list processing
+├── digest.py             # Markdown summary generation
+├── citations.py          # External citation count lookups
+└── related_papers.py     # Similar paper discovery
+├── main.py              # CLI entry point
+├── setup.py             # Packaging and distribution
+└── requirements.txt     # Dependency list
 ```
 
 ## Adding New Features
