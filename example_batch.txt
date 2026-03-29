@@ -1,0 +1,23 @@
+# ArXiv Batch Download File — Sample
+# ====================================
+# Lines starting with # are comments and are ignored.
+# Each non-blank, non-comment line can be:
+#   - An arXiv ID  (e.g. 2301.07041 or 2301.07041v2)
+#   - A search query (any text that doesn't look like an arXiv ID)
+#
+# The tool auto-detects IDs vs queries. For IDs it fetches exactly that
+# paper; for queries it downloads the top N matching papers (configurable
+# with --max-per-query).
+
+# ── Specific papers by arXiv ID ───────────────────────────────────────────────
+2106.09685
+1706.03762
+2005.14165
+2010.11929
+
+# ── Topic searches ────────────────────────────────────────────────────────────
+diffusion models image generation
+retrieval augmented generation
+large language model alignment
+graph neural networks molecular property prediction
+federated learning privacy
