@@ -1,19 +1,24 @@
 #!/usr/bin/env python3
 """
-ArXiv Paper Downloader v2.0 — Main CLI interface
+🚀 Research Paper Extractor v2.0.0 — Modern Research Toolkit
 
-New commands:
-  export         Export paper citations (BibTeX, RIS, APA, plain)
-  analyze        Run analytics on a search result set
-  summarize      Show TF-IDF key-point summary of paper abstract(s)
+Available Commands:
+  search         Search arXiv and Semantic Scholar
+  shell          NEW: Interactive persistent session
+  recommend      NEW: Activity-based suggestions
+  compare        NEW: Side-by-side paper analysis
+  grep-pdf       NEW: Search text inside downloaded PDFs
+  library        Manage local library (add/list/tag/rate/note/export)
+  digest         Generate daily research digest (MD/HTML)
+  analyze        Run analytics with visualizations
+  summarize      Show RAKE key-point summary
   watch          Manage the keyword/author watchlist
-  check-alerts   Check watchlist for new papers
-  library        Manage your local paper library (add/list/tag/rate/note)
-  batch          Download from a .txt/.csv batch file
-  digest         Generate a markdown daily digest
-  citations      Look up citation counts via Semantic Scholar
+  check-alerts   Fetch new papers for all subscriptions
+  citations      Look up Semantic Scholar citation counts
   related        Find related papers for a given arXiv ID
-  config         View / set user configuration
+  categories     FULL LIST of arXiv categories
+  config         Manage CLI settings (Themes, URLs)
+  open           Open paper in browser
 """
 
 import click

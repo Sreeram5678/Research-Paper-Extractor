@@ -54,7 +54,9 @@ class PaperLibrary:
                     read           INTEGER NOT NULL DEFAULT 0,
                     rating         INTEGER,        -- 1-5 stars
                     notes          TEXT,
-                    tags           TEXT            -- JSON list
+                    tags           TEXT,           -- JSON list
+                    citation_count INTEGER,
+                    last_synced    TEXT
                 );
 
                 CREATE TABLE IF NOT EXISTS tags (
@@ -227,6 +229,24 @@ class PaperLibrary:
             if self.add_tag(aid, tag):
                 count += 1
         return count
+
+    def update_paper_metadata(self, arxiv_id: str, metadata: Dict[str, Any]) -> bool:
+        """Update arbitrary metadata for a paper."""
+        if not metadata:
+            return False
+            
+        fields = []
+        params = []
+        for key, val in metadata.items():
+            fields.append(f"{key} = ?")
+            params.append(val if not isinstance(val, (list, dict)) else json.dumps(val))
+            
+        params.append(arxiv_id)
+        query = f"UPDATE papers SET {', '.join(fields)} WHERE arxiv_id = ?"
+        
+        with self._connect() as conn:
+            conn.execute(query, params)
+            return conn.execute('SELECT changes()').fetchone()[0] > 0
 
     def set_file_path(self, arxiv_id: str, file_path: str) -> bool:
         """Update the local file path for a paper."""

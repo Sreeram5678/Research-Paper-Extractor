@@ -529,6 +529,13 @@ class TestPaperLibrary(unittest.TestCase):
         record = self.lib.get_paper(self.paper.id)
         self.assertEqual(record['notes'], 'Great read!')
 
+    def test_update_paper_metadata(self):
+        self.lib.add_paper(self.paper)
+        updated = self.lib.update_paper_metadata(self.paper.id, {'citation_count': 42})
+        self.assertTrue(updated)
+        record = self.lib.get_paper(self.paper.id)
+        self.assertEqual(record['citation_count'], 42)
+
     def test_remove_paper(self):
         self.lib.add_paper(self.paper)
         removed = self.lib.remove_paper(self.paper.id)
