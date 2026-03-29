@@ -51,6 +51,7 @@ from research_paper_extractor.history import SearchHistory
 from research_paper_extractor.semantic_scholar import SemanticScholarAPI
 from research_paper_extractor.webhooks import WebhookManager
 from research_paper_extractor.comparison import PaperComparator
+from research_paper_extractor.recommender import Recommender
 from research_paper_extractor.utils import themed_header, themed_print
 from research_paper_extractor import config_manager
 
@@ -1262,6 +1263,25 @@ def compare_papers(id1, id2, source):
 
     diff = PaperComparator.compare(p1, p2)
     click.echo(PaperComparator.format_comparison_report(p1, p2, diff))
+
+
+@cli.command('recommend')
+@click.option('--limit', '-l', default=5, type=int, help='Number of recommendations (default: 5)')
+def recommend_papers(limit):
+    """Get paper recommendations based on your search history and library tags."""
+    rec = Recommender()
+    themed_header("Paper Recommendations")
+    
+    click.echo("Analyzing your recent activity...")
+    results = rec.get_recommendations(limit=limit)
+    
+    if not results:
+        themed_print("No recommendations yet. Try searching for more papers or tagging your library!", "warning")
+        return
+        
+    for i, p in enumerate(results, 1):
+        themed_print(f"{i}. {p.title}", "info")
+        click.echo(f"   ID: {p.id} | {p.abs_url}\n")
 
 
 if __name__ == '__main__':
