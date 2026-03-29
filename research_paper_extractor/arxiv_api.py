@@ -171,16 +171,37 @@ class ArxivAPI:
     
     def get_paper_by_id(self, arxiv_id: str) -> Optional[ArxivPaper]:
         """
-        Get a specific paper by its arXiv ID.
-        
+        Get a specific paper by its arXiv ID using the id_list parameter.
+
+        Uses the arXiv API id_list for exact lookup, which is more reliable
+        than embedding the ID inside a search query string.
+
         Args:
-            arxiv_id: The arXiv ID (e.g., "2301.07041")
-            
+            arxiv_id: The arXiv ID (e.g., "2301.07041" or "2301.07041v2")
+
         Returns:
             ArxivPaper object or None if not found
         """
-        papers = self.search(f"id:{arxiv_id}", max_results=1)
-        return papers[0] if papers else None
+        clean_id = arxiv_id.split('v')[0]
+        params = {'id_list': clean_id, 'max_results': 1}
+        url = f"{self.base_url}?{urllib.parse.urlencode(params)}"
+        logger.info(f"Fetching paper by ID: {clean_id}")
+
+        try:
+            time.sleep(self.delay)
+            with urllib.request.urlopen(url) as response:
+                feed = feedparser.parse(response.read())
+
+            if feed.entries:
+                try:
+                    return ArxivPaper(feed.entries[0])
+                except Exception as e:
+                    logger.warning(f"Error parsing paper entry: {e}")
+            return None
+
+        except Exception as e:
+            logger.error(f"Error fetching paper {arxiv_id}: {e}")
+            raise
     
     @staticmethod
     def get_available_categories() -> Dict[str, str]:
