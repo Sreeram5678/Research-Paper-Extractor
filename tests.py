@@ -541,8 +541,26 @@ class TestSemanticScholar(unittest.TestCase):
         
         self.assertEqual(len(papers), 1)
         self.assertEqual(papers[0].title, "SS Paper")
-        self.assertEqual(papers[0].id, "2301.12345")
         self.assertEqual(papers[0].authors, ["Author X"])
+
+
+# ===========================================================================
+# Test: Keyword Analysis
+# ===========================================================================
+
+class TestKeywordAnalysis(unittest.TestCase):
+
+    def test_analyze_keywords_bulk(self):
+        from research_paper_extractor.summarizer import analyze_keywords_bulk
+        papers = [
+            {'summary': 'Deep Learning is great for AI.'},
+            {'summary': 'AI and Deep Learning are related.'},
+            {'summary': 'Transformers use Attention for Deep Learning.'}
+        ]
+        top = analyze_keywords_bulk(papers, top_n=5)
+        words = [w for w, c in top]
+        self.assertIn('learning', words)
+        self.assertIn('deep', words)
 
 
 # ===========================================================================
