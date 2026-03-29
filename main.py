@@ -911,6 +911,48 @@ def library_import_bib(bib_file: str, fetch_metadata: bool):
     click.echo(f"✓ Successfully imported {added_count} new papers to library.")
 
 
+@library.command('sync-metadata')
+@click.option('--arxiv-id', '-i', default=None, help='Sync metadata for a specific arXiv ID')
+@click.option('--all', 'sync_all', is_flag=True, help='Sync metadata for all papers in library')
+def library_sync_metadata(arxiv_id: Optional[str], sync_all: bool):
+    """Sync citation counts and metadata for papers from Semantic Scholar."""
+    from research_paper_extractor.citations import get_citation_count
+    from datetime import datetime, timezone
+    
+    lib = PaperLibrary()
+    
+    if arxiv_id:
+        papers_to_sync = [lib.get_paper(arxiv_id)] if lib.get_paper(arxiv_id) else []
+    elif sync_all:
+        papers_to_sync = lib.list_papers(limit=1000)
+    else:
+        click.echo("Please specify --arxiv-id or --all.")
+        return
+        
+    if not papers_to_sync:
+        click.echo("No papers found to sync.")
+        return
+        
+    click.echo(f"Syncing {len(papers_to_sync)} papers...")
+    synced_count = 0
+    with click.progressbar(papers_to_sync, label='Syncing metadata') as bar:
+        for p in bar:
+            aid = p.get('arxiv_id')
+            if not aid:
+                continue
+                
+            citations = get_citation_count(aid)
+            if citations:
+                metadata = {
+                    'citation_count': citations['citation_count'],
+                    'last_synced': datetime.now(timezone.utc).isoformat()
+                }
+                if lib.update_paper_metadata(aid, metadata):
+                    synced_count += 1
+                    
+    click.echo(f"✓ Finished syncing metadata for {synced_count} paper(s).")
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # FEATURE 7 — Batch download
 # ══════════════════════════════════════════════════════════════════════════════
