@@ -49,6 +49,7 @@ from research_paper_extractor.related_papers import find_related_papers, format_
 from research_paper_extractor.pdf_manager import PDFManager
 from research_paper_extractor.history import SearchHistory
 from research_paper_extractor.semantic_scholar import SemanticScholarAPI
+from research_paper_extractor.webhooks import WebhookManager
 from research_paper_extractor import config_manager
 
 # Set up logging
@@ -630,6 +631,16 @@ def check_alerts(days: int, max_per_query: int, download: bool,
         click.echo(f"Checking for new papers (last {days} days)...")
         results = check_for_new_papers(days=days, max_per_query=max_per_query)
         click.echo(format_watchlist_results(results))
+
+        # Webhook Notification
+        webhook_url = config_manager.get('notifications', 'webhook_url')
+        if webhook_url and results:
+            wm = WebhookManager(webhook_url)
+            all_papers = [p for papers in results.values() for p in papers]
+            click.echo("Sending webhook notification...")
+            wm.send_notification("New Research Papers Alert", 
+                                f"Found {len(all_papers)} new papers in your watchlist.", 
+                                all_papers)
 
         if download and results:
             all_papers = [p for papers in results.values() for p in papers]

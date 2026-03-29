@@ -28,6 +28,9 @@ DEFAULTS = {
         'lookback_days': '7',
         'max_results_per_query': '10',
     },
+    'notifications': {
+        'webhook_url': '',
+    },
 }
 
 
