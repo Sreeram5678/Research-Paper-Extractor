@@ -117,21 +117,61 @@ def _format_stats(papers: List[ArxivPaper]) -> str:
     return '\n'.join(lines) + '\n'
 
 
-def save_digest(content: str, output_dir: Optional[str] = None) -> str:
+def markdown_to_html(md_content: str) -> str:
+    """Very simple markdown to HTML converter (subset of MD)."""
+    import re
+    html = md_content
+    # Headers
+    html = re.sub(r'^# (.*)$', r'<h1>\1</h1>', html, flags=re.M)
+    html = re.sub(r'^## (.*)$', r'<h2>\1</h2>', html, flags=re.M)
+    html = re.sub(r'^### \[(.*)\]\((.*)\)$', r'<h3><a href="\2">\1</a></h3>', html, flags=re.M)
+    # Quotes
+    html = re.sub(r'^> (.*)$', r'<blockquote>\1</blockquote>', html, flags=re.M)
+    # Bold / Code
+    html = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', html)
+    html = re.sub(r'`(.*?)`', r'<code>\1</code>', html)
+    # Horizontal Rule
+    html = re.sub(r'^---$', r'<hr>', html, flags=re.M)
+    # Newlines
+    html = html.replace('\n', '<br>')
+    
+    # Wrap in basic HTML5 boilerplate
+    template = f"""<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>arXiv Daily Digest</title>
+    <style>
+        body {{ font-family: -apple-system, sans-serif; line-height: 1.6; max-width: 800px; margin: 40px auto; padding: 0 20px; color: #333; }}
+        h1 {{ border-bottom: 2px solid #eee; padding-bottom: 10px; }}
+        h2 {{ margin-top: 40px; color: #444; }}
+        blockquote {{ border-left: 4px solid #ddd; padding-left: 20px; color: #666; font-style: italic; }}
+        code {{ background: #f4f4f4; padding: 2px 4px; border-radius: 4px; }}
+        a {{ color: #0066cc; text-decoration: none; }}
+        a:hover {{ text-decoration: underline; }}
+    </style>
+</head>
+<body>
+    {html}
+</body>
+</html>"""
+    return template
+
+
+def save_digest(content: str, output_dir: Optional[str] = None, format: str = 'md') -> str:
     """
-    Save the digest to a markdown file.
-
-    Args:
-        content: Digest markdown content
-        output_dir: Directory to save to (default: current directory)
-
-    Returns:
-        Path to the saved file
+    Save the digest to a file.
     """
     out_dir = Path(output_dir) if output_dir else Path('.')
     out_dir.mkdir(parents=True, exist_ok=True)
     date_str = datetime.now(timezone.utc).strftime('%Y-%m-%d')
-    filename = f'arxiv_digest_{date_str}.md'
+    
+    if format == 'html':
+        filename = f'arxiv_digest_{date_str}.html'
+        content = markdown_to_html(content)
+    else:
+        filename = f'arxiv_digest_{date_str}.md'
+        
     filepath = out_dir / filename
     with open(filepath, 'w', encoding='utf-8') as f:
         f.write(content)
