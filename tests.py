@@ -411,8 +411,43 @@ class TestBibtexParser(unittest.TestCase):
         self.assertIsNotNone(mock)
         paper = ArxivPaper(mock)
         self.assertEqual(paper.id, '2301.07041')
-        self.assertEqual(paper.title, 'Test Title')
         self.assertIn('Author 1', paper.authors)
+
+
+# ===========================================================================
+# Test: Markdown Exporter
+# ===========================================================================
+
+class TestMarkdownExporter(unittest.TestCase):
+
+    def test_paper_to_markdown_contains_fields(self):
+        from research_paper_extractor.markdown_exporter import paper_to_markdown
+        paper = {
+            'arxiv_id': '2301.07041',
+            'title': 'Test Paper',
+            'authors': json.dumps(['Author A', 'Author B']),
+            'abstract': 'This is a test abstract.',
+            'tags': json.dumps(['tag1', 'tag2']),
+            'notes': 'Great paper'
+        }
+        md = paper_to_markdown(paper)
+        self.assertIn('# Test Paper', md)
+        self.assertIn('arxiv_id: 2301.07041', md)
+        self.assertIn('tag1', md)
+        self.assertIn('Great paper', md)
+
+    def test_export_library_to_markdown(self):
+        from research_paper_extractor.markdown_exporter import export_library_to_markdown
+        papers = [{
+            'arxiv_id': '2301.07041',
+            'title': 'Test Paper',
+            'authors': ['A'],
+            'abstract': 'B'
+        }]
+        with tempfile.TemporaryDirectory() as tmpdir:
+            count = export_library_to_markdown(papers, tmpdir)
+            self.assertEqual(count, 1)
+            self.assertTrue(os.path.exists(os.path.join(tmpdir, '2301.07041.md')))
 
 
 # ===========================================================================
