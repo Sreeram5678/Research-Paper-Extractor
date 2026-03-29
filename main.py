@@ -50,6 +50,7 @@ from research_paper_extractor.pdf_manager import PDFManager
 from research_paper_extractor.history import SearchHistory
 from research_paper_extractor.semantic_scholar import SemanticScholarAPI
 from research_paper_extractor.webhooks import WebhookManager
+from research_paper_extractor.comparison import PaperComparator
 from research_paper_extractor import config_manager
 
 # Set up logging
@@ -1233,6 +1234,26 @@ def grep_pdf(query, path, case_sensitive):
         if len(matches) > 5:
             click.echo(f"   ... and {len(matches) - 5} more matches in this file.")
         click.echo("")
+
+
+@cli.command('compare')
+@click.argument('id1', required=True)
+@click.argument('id2', required=True)
+@click.option('--source', '-s', default='arxiv', type=click.Choice(['arxiv', 'semantic_scholar']), help='Search source (default: arxiv)')
+def compare_papers(id1, id2, source):
+    """Compare two papers by their arXiv or Semantic Scholar IDs."""
+    api = ArxivAPI() if source == 'arxiv' else SemanticScholarAPI()
+    
+    click.echo(f"Fetching papers: {id1} and {id2}...")
+    p1 = api.get_paper_by_id(id1)
+    p2 = api.get_paper_by_id(id2)
+    
+    if not p1 or not p2:
+        click.echo(f"Error: Could not find both papers. Check IDs and source.")
+        return
+
+    diff = PaperComparator.compare(p1, p2)
+    click.echo(PaperComparator.format_comparison_report(p1, p2, diff))
 
 
 if __name__ == '__main__':
