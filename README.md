@@ -1,35 +1,22 @@
-# Research Paper Extractor
+# 🚀 Research Paper Extractor v2.0.0
 
-A powerful Python CLI toolkit for searching, downloading, and **managing** research papers from arXiv. Version 2.0 expands far beyond simple downloads — it includes a local library, citation export, research analytics, daily digests, watchlists, and much more.
+A powerful, professional Python CLI toolkit for searching, downloading, and **managing** research papers from arXiv and Semantic Scholar. Version 2.0.0 is a complete modernization with 15+ new features for serious researchers.
 
-## Features
+## ✨ New in v2.0.0
 
-### Core
-- **Smart Search** — Search by keywords, topics, or phrases
-- **Author Search** — Find all papers by a specific researcher
-- **Category Filtering** — Filter by arXiv categories (cs.AI, cs.LG, cs.CV, etc.)
-- **Recent Papers** — Show papers from the last N days
-- **Batch Download** — Download multiple papers at once
-- **Download by ID** — Fetch a specific paper by its arXiv ID
-- **Preview Mode** — Browse results without downloading
-- **Interactive Mode** — Guided interface for first-time users
-- **Manifest Files** — Save a JSON manifest of every download session
+- **Multi-Source Search** — Search both arXiv and Semantic Scholar simultaneously.
+- **Interactive Shell** — Dedicated persistent shell mode for complex research workflows.
+- **Paper Comparison** — Side-by-side analysis of similarity, authors, and keywords.
+- **Recommendation Engine** — Suggests papers based on your library tags and search history.
+- **RAKE Keyword Analysis** — Advanced Rapid Automatic Keyword Extraction for better summaries.
+- **PDF Text Search (`grep-pdf`)** — Search for specific phrases *inside* your downloaded PDF collection.
+- **CLI Themes** — Customizable color themes (Cyan, Green, Blue, Yellow, White).
+- **Webhooks** — Instant Discord/Slack notifications for watchlist alerts.
+- **Library Export** — Export your local library to **BibTeX**, CSV, or JSON.
+- **HTML Digest** — Generate beautiful, styled HTML reports of daily research.
+- **Visual Analytics** — ASCII bar charts for publication trends and category distributions.
 
-### Research Tools (New in v2.0)
-- **Local Library** — Tag, rate, annotate, and track your reading list (SQLite)
-- **Citation Export** — Export to BibTeX, RIS, APA, or plain text
-- **Analytics** — Publication trends, top authors, keyword frequency, collaboration stats
-- **Abstract Summaries** — TF-IDF based key-point extraction (no AI API needed)
-- **Watchlists** — Subscribe to keywords and authors; get alerts for new papers
-- **Daily Digests** — Auto-generate markdown digests of the latest research
-- **Citation Counts** — Look up citation counts via Semantic Scholar
-- **Related Papers** — Discover papers similar to one you already have
-- **Open in Browser** — Instantly open an arXiv abstract or PDF in your browser
-- **Paper Info** — Inspect paper metadata without downloading
-- **Config Management** — Persistent INI-based user settings
-- **Batch Processing** — Process .txt or .csv lists of IDs and queries
-
-## Installation
+## 🛠️ Installation
 
 1. **Clone** this repository:
    ```bash
@@ -42,99 +29,57 @@ A powerful Python CLI toolkit for searching, downloading, and **managing** resea
    pip install -r requirements.txt
    ```
 
-## Quick Start
+## 🚀 Quick Start
 
 ```bash
-# Search and download papers
-python main.py search "transformer architecture" --max-results 5
+# Enter the interactive shell (RECOMMENDED)
+python main.py shell
 
-# Preview only (no download)
-python main.py search "diffusion models" --preview-only
+# Search both arXiv and Semantic Scholar
+python main.py search "latent diffusion" --source both
 
-# Download a specific paper
-python main.py download-by-id 1706.03762
+# Compare two papers
+python main.py compare 1706.03762 2301.07041
 
-# Look up paper info without downloading
-python main.py info 1706.03762
+# Search inside your downloaded PDFs
+python main.py grep-pdf "positional encoding"
 
-# Open a paper in your browser
-python main.py open 1706.03762
+# Get personalized recommendations
+python main.py recommend
 ```
 
-## Available Commands
+## 📜 Available Commands
 
-### Search & Download
+### Search & Discovery
 
 | Command | Description |
 |---|---|
-| `search QUERY` | Search arXiv and download papers |
-| `download-by-id ID` | Download a specific paper by arXiv ID |
-| `search-by-author NAME` | Find papers by a researcher |
-| `interactive` | Guided interactive search session |
-| `batch FILE` | Download from a .txt/.csv batch file |
+| `search QUERY` | Search arXiv/Semantic Scholar and download papers |
+| `shell` | **[NEW]** Enter interactive persistent shell mode |
+| `recommend` | **[NEW]** Get paper suggestions based on activity |
+| `compare ID1 ID2` | **[NEW]** Compare two papers side-by-side |
+| `grep-pdf QUERY` | **[NEW]** Search text inside downloaded PDFs |
 | `categories` | List all available arXiv categories |
+| `info ID` | Show paper metadata (includes Semantic Scholar citations) |
 
-**Key `search` options:**
-- `--max-results, -n` — Number of papers (default: from config)
-- `--download-dir, -d` — Download directory
-- `--categories, -c` — Filter by arXiv category (repeatable)
-- `--sort-by` — Sort by `relevance`, `lastUpdatedDate`, or `submittedDate`
-- `--recent-days` — Only papers from the last N days
-- `--preview-only, -p` — See results without downloading
-- `--auto-download, -a` — Download without confirmation
-- `--add-to-library, -l` — Add results to your local library
-- `--manifest, -m` — Save a JSON manifest file after downloading
-
-### Paper Info & Discovery
+### Library & Export
 
 | Command | Description |
 |---|---|
-| `info ID` | Show paper metadata (no download) |
-| `summarize ID` | TF-IDF abstract key-point extraction |
-| `related ID` | Find papers related to a given arXiv paper |
-| `open ID` | Open abstract (or PDF) in default browser |
-| `citations QUERY` | Look up citation counts via Semantic Scholar |
-
-### Library Management (`library`)
-
-| Sub-command | Description |
-|---|---|
-| `library add ID` | Add a paper by arXiv ID |
 | `library list` | List library papers (filter by tag/rating/read) |
-| `library mark-read ID` | Mark paper as read |
-| `library rate ID 1-5` | Rate a paper 1–5 stars |
-| `library note ID "text"` | Add a personal note |
-| `library tag ID TAG` | Tag a paper |
-| `library remove ID` | Remove a paper from library |
-| `library stats` | Show library statistics |
+| `library export` | **[NEW]** Export library to **BibTeX**, CSV, or JSON |
+| `digest` | Generate daily research digest (**MD** or **HTML**) |
+| `analyze QUERY` | Run analytics with visual bar charts |
+| `export QUERY` | Export search result citations to BibTeX/RIS |
 
-### Watchlist & Alerts (`watch`)
-
-| Sub-command | Description |
-|---|---|
-| `watch add-keyword TERM` | Subscribe to a keyword |
-| `watch add-author NAME` | Subscribe to an author |
-| `watch remove-keyword TERM` | Unsubscribe keyword |
-| `watch remove-author NAME` | Unsubscribe author |
-| `watch list` | Show your current watchlist |
-| `watch clear` | Clear all watchlist entries |
-| `check-alerts` | Fetch new papers for all subscriptions |
-
-### Export & Analysis
+### Watchlist & Config
 
 | Command | Description |
 |---|---|
-| `export QUERY` | Export citations (BibTeX, RIS, APA, plain) |
-| `analyze QUERY` | Run analytics on a set of search results |
-| `digest` | Generate a markdown daily research digest |
-
-### Configuration (`config`)
-
-| Sub-command | Description |
-|---|---|
-| `config show` | Display current settings |
-| `config set SECTION KEY VALUE` | Update a setting |
-| `config reset` | Reset all settings to defaults |
+| `check-alerts` | Fetch new papers and send **Webhook notifications** |
+| `config theme` | **[NEW]** Switch between CLI color themes |
+| `config show` | Display current settings (including URLs/Themes) |
+| `watch list` | Manage your automated alerts |
 
 ## arXiv Categories
 
