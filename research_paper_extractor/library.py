@@ -209,6 +209,25 @@ class PaperLibrary:
                          (json.dumps(tags), arxiv_id))
             return True
 
+    def get_all_tags(self) -> List[str]:
+        """Return a list of all unique tags used in the library."""
+        all_tags = set()
+        with self._connect() as conn:
+            rows = conn.execute('SELECT tags FROM papers WHERE tags IS NOT NULL').fetchall()
+            for row in rows:
+                tags = json.loads(row['tags'] or '[]')
+                for t in tags:
+                    all_tags.add(t)
+        return sorted(list(all_tags))
+
+    def add_tags_bulk(self, arxiv_ids: List[str], tag: str) -> int:
+        """Add a tag to multiple papers."""
+        count = 0
+        for aid in arxiv_ids:
+            if self.add_tag(aid, tag):
+                count += 1
+        return count
+
     def set_file_path(self, arxiv_id: str, file_path: str) -> bool:
         """Update the local file path for a paper."""
         with self._connect() as conn:
@@ -290,3 +309,30 @@ class PaperLibrary:
         """Get the local file path for a paper."""
         record = self.get_paper(arxiv_id)
         return record.get('file_path') if record else None
+
+    def export_to_bibtex(self, output_path: str) -> bool:
+        """Export the entire library to a BibTeX file."""
+        import json
+        papers = self.list_papers(limit=10000)
+        if not papers:
+            return False
+            
+        try:
+            with open(output_path, 'w', encoding='utf-8') as f:
+                for p in papers:
+                    authors = " and ".join(json.loads(p['authors']))
+                    clean_id = p['arxiv_id'].replace('/', '_')
+                    entry = (
+                        f"@article{{{clean_id},\n"
+                        f"  title = {{{p['title']}}},\n"
+                        f"  author = {{{authors}}},\n"
+                        f"  journal = {{arXiv preprint arXiv:{p['arxiv_id']}}},\n"
+                        f"  year = {{{p['published'][:4]}}},\n"
+                        f"  url = {{{p['abs_url']}}}\n"
+                        f"}}\n\n"
+                    )
+                    f.write(entry)
+            return True
+        except Exception as e:
+            logger.error(f"Error exporting to BibTeX: {e}")
+            return False

@@ -375,6 +375,82 @@ class TestBatchDownloader(unittest.TestCase):
 
 
 # ===========================================================================
+# Test: BibTeX Parser
+# ===========================================================================
+
+class TestBibtexParser(unittest.TestCase):
+
+    def test_parse_simple_bib(self):
+        from research_paper_extractor.bibtex_parser import parse_bibtex_file
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.bib', delete=False) as f:
+            f.write("""
+            @article{paper1,
+                title = {Attention is All You Need},
+                author = {Vaswani, Ashish and Shazeer, Noam},
+                journal = {arXiv:1706.03762},
+                year = {2017}
+            }
+            """)
+            fname = f.name
+        try:
+            entries = parse_bibtex_file(fname)
+            self.assertEqual(len(entries), 1)
+            self.assertEqual(entries[0]['arxiv_id'], '1706.03762')
+        finally:
+            os.unlink(fname)
+
+    def test_bib_entry_to_paper_obj(self):
+        from research_paper_extractor.bibtex_parser import bib_entry_to_paper_obj
+        from research_paper_extractor.arxiv_api import ArxivPaper
+        entry = {
+            'arxiv_id': '2301.07041',
+            'title': 'Test Title',
+            'author': 'Author 1 and Author 2'
+        }
+        mock = bib_entry_to_paper_obj(entry)
+        self.assertIsNotNone(mock)
+        paper = ArxivPaper(mock)
+        self.assertEqual(paper.id, '2301.07041')
+        self.assertIn('Author 1', paper.authors)
+
+
+# ===========================================================================
+# Test: Markdown Exporter
+# ===========================================================================
+
+class TestMarkdownExporter(unittest.TestCase):
+
+    def test_paper_to_markdown_contains_fields(self):
+        from research_paper_extractor.markdown_exporter import paper_to_markdown
+        paper = {
+            'arxiv_id': '2301.07041',
+            'title': 'Test Paper',
+            'authors': json.dumps(['Author A', 'Author B']),
+            'abstract': 'This is a test abstract.',
+            'tags': json.dumps(['tag1', 'tag2']),
+            'notes': 'Great paper'
+        }
+        md = paper_to_markdown(paper)
+        self.assertIn('# Test Paper', md)
+        self.assertIn('arxiv_id: 2301.07041', md)
+        self.assertIn('tag1', md)
+        self.assertIn('Great paper', md)
+
+    def test_export_library_to_markdown(self):
+        from research_paper_extractor.markdown_exporter import export_library_to_markdown
+        papers = [{
+            'arxiv_id': '2301.07041',
+            'title': 'Test Paper',
+            'authors': ['A'],
+            'abstract': 'B'
+        }]
+        with tempfile.TemporaryDirectory() as tmpdir:
+            count = export_library_to_markdown(papers, tmpdir)
+            self.assertEqual(count, 1)
+            self.assertTrue(os.path.exists(os.path.join(tmpdir, '2301.07041.md')))
+
+
+# ===========================================================================
 # Test: Library
 # ===========================================================================
 
@@ -428,6 +504,24 @@ class TestPaperLibrary(unittest.TestCase):
         record = self.lib.get_paper(self.paper.id)
         tags = json.loads(record['tags'])
         self.assertNotIn('ml', tags)
+
+    def test_get_all_tags(self):
+        self.lib.add_paper(self.paper)
+        self.lib.add_tag(self.paper.id, 'ml')
+        p2 = _make_paper(arxiv_id='2401.00002')
+        self.lib.add_paper(p2)
+        self.lib.add_tag(p2.id, 'ai')
+        all_tags = self.lib.get_all_tags()
+        self.assertEqual(all_tags, ['ai', 'ml'])
+
+    def test_add_tags_bulk(self):
+        self.lib.add_paper(self.paper)
+        p2 = _make_paper(arxiv_id='2401.00002')
+        self.lib.add_paper(p2)
+        count = self.lib.add_tags_bulk([self.paper.id, p2.id], 'reviewed')
+        self.assertEqual(count, 2)
+        self.assertIn('reviewed', json.loads(self.lib.get_paper(self.paper.id)['tags']))
+        self.assertIn('reviewed', json.loads(self.lib.get_paper(p2.id)['tags']))
 
     def test_add_note(self):
         self.lib.add_paper(self.paper)

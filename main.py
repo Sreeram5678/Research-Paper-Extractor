@@ -52,8 +52,10 @@ from research_paper_extractor.semantic_scholar import SemanticScholarAPI
 from research_paper_extractor.webhooks import WebhookManager
 from research_paper_extractor.comparison import PaperComparator
 from research_paper_extractor.recommender import Recommender
+from research_paper_extractor.shell import InteractiveShell
 from research_paper_extractor.utils import themed_header, themed_print
 from research_paper_extractor import config_manager
+from research_paper_extractor.bibtex_parser import parse_bibtex_file, bib_entry_to_paper_obj
 
 # Set up logging
 logging.basicConfig(
@@ -741,20 +743,55 @@ def library_note(arxiv_id: str, note: str):
     else:
         click.echo(f"Paper '{arxiv_id}' not found in library.")
 
-
 @library.command('tag')
 @click.argument('arxiv_id', required=True)
 @click.argument('tag', required=True)
-@click.option('--remove', is_flag=True, help='Remove this tag instead of adding')
-def library_tag(arxiv_id: str, tag: str, remove: bool):
-    """Add or remove a tag on a library paper."""
+def library_tag(arxiv_id: str, tag: str):
+    """Add a tag to a library paper."""
     lib = PaperLibrary()
-    if remove:
-        lib.remove_tag(arxiv_id, tag)
+    if lib.add_tag(arxiv_id, tag):
+        click.echo(f"✓ Added tag '{tag}' to {arxiv_id}.")
+    else:
+        click.echo(f"Paper '{arxiv_id}' not found in library.")
+
+
+@library.command('bulk-tag')
+@click.argument('tag', required=True)
+@click.argument('arxiv_ids', nargs=-1, required=True)
+def library_bulk_tag(tag, arxiv_ids):
+    """Add a tag to multiple library papers at once."""
+    lib = PaperLibrary()
+    count = lib.add_tags_bulk(list(arxiv_ids), tag)
+    click.echo(f"✓ Added tag '{tag}' to {count} paper(s).")
+
+
+@library.command('untag')
+@click.argument('arxiv_id', required=True)
+@click.argument('tag', required=True)
+def library_untag(arxiv_id: str, tag: str):
+    """Remove a tag on a library paper (alias for tag --remove)."""
+    lib = PaperLibrary()
+    if lib.remove_tag(arxiv_id, tag):
         click.echo(f"✓ Removed tag '{tag}' from {arxiv_id}.")
     else:
-        lib.add_tag(arxiv_id, tag)
-        click.echo(f"✓ Added tag '{tag}' to {arxiv_id}.")
+        click.echo(f"Paper '{arxiv_id}' or tag '{tag}' not found.")
+
+
+@library.command('tags')
+def library_tags():
+    """List all unique tags in your library."""
+    lib = PaperLibrary()
+    tags = lib.get_all_tags()
+    if not tags:
+        click.echo("No tags found in your library.")
+        return
+    
+    click.echo("\n── Library Tags ──────────────────────────")
+    for t in tags:
+        # Count papers with this tag
+        papers = lib.list_papers(tag=t, limit=1000)
+        click.echo(f"  • {t:<20} ({len(papers)} papers)")
+    click.echo("──────────────────────────────────────────")
 
 
 @library.command('remove')
@@ -786,27 +823,92 @@ def library_stats():
 
 @library.command('export')
 @click.argument('filename', required=True)
-@click.option('--format', '-f', type=click.Choice(['csv', 'json']), default='csv', show_default=True)
+@click.option('--format', '-f', type=click.Choice(['csv', 'json', 'bibtex']), default='csv', show_default=True)
 def library_export(filename, format):
-    """Export the entire paper library to CSV or JSON."""
+    """Export the entire paper library to CSV, JSON, or BibTeX."""
     lib = PaperLibrary()
     
     # Ensure extension
-    if not filename.endswith(f".{format}"):
-        filename += f".{format}"
+    ext = format if format != 'bibtex' else 'bib'
+    if not filename.endswith(f".{ext}"):
+        filename += f".{ext}"
         
     click.echo(f"Exporting library to {filename} ({format.upper()})...")
     
     success = False
     if format == 'csv':
         success = lib.export_to_csv(filename)
-    else:
+    elif format == 'json':
         success = lib.export_to_json(filename)
+    else:
+        success = lib.export_to_bibtex(filename)
         
     if success:
         click.echo(f"✓ Library exported successfully to: {filename}")
     else:
         click.echo("Error: Could not export library (is it empty?)", err=True)
+
+
+@library.command('export-md')
+@click.argument('output_dir', type=click.Path())
+@click.option('--tag', '-t', default=None, help='Filter papers by tag')
+def library_export_md(output_dir: str, tag: Optional[str]):
+    """Export papers to Markdown files (Obsidian/Notion compatible)."""
+    from research_paper_extractor.markdown_exporter import export_library_to_markdown
+    
+    lib = PaperLibrary()
+    papers = lib.list_papers(tag=tag, limit=10000)
+    
+    if not papers:
+        click.echo("No papers found matching the filter.")
+        return
+        
+    click.echo(f"Exporting {len(papers)} papers to {output_dir}...")
+    count = export_library_to_markdown(papers, output_dir)
+    click.echo(f"✓ successfully exported {count} papers as Markdown.")
+
+
+@library.command('import-bib')
+@click.argument('bib_file', type=click.Path(exists=True))
+@click.option('--fetch-metadata', '-f', is_flag=True, help='Fetch full metadata from arXiv for each ID')
+def library_import_bib(bib_file: str, fetch_metadata: bool):
+    """Import papers from a .bib file into your library."""
+    from research_paper_extractor.bibtex_parser import parse_bibtex_file, bib_entry_to_paper_obj
+    
+    entries = parse_bibtex_file(bib_file)
+    if not entries:
+        click.echo(f"No valid arXiv entries found in {bib_file}.")
+        return
+
+    click.echo(f"Found {len(entries)} candidate papers in BibTeX file.")
+    lib = PaperLibrary()
+    api = ArxivAPI()
+    
+    added_count = 0
+    with click.progressbar(entries, label='Importing papers') as bar:
+        for entry in bar:
+            arxiv_id = entry.get('arxiv_id')
+            if not arxiv_id:
+                continue
+                
+            paper = None
+            if fetch_metadata:
+                try:
+                    paper = api.get_paper_by_id(arxiv_id)
+                except Exception:
+                    pass
+            
+            if not paper:
+                # Use metadata from BibTeX
+                mock_entry = bib_entry_to_paper_obj(entry)
+                if mock_entry:
+                    paper = ArxivPaper(mock_entry)
+            
+            if paper:
+                if lib.add_paper(paper):
+                    added_count += 1
+                
+    click.echo(f"✓ Successfully imported {added_count} new papers to library.")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -901,15 +1003,11 @@ def batch(batch_file: str, download_dir: Optional[str], max_per_query: int,
               help='Directory to save the digest markdown file')
 @click.option('--print-only', '-p', is_flag=True,
               help='Print to stdout instead of saving to file')
+@click.option('--format', '-f', type=click.Choice(['md', 'html']), default='md',
+              help='Output format (default: md)')
 def digest(categories: tuple, keywords: tuple, days: int,
-           max_per_query: int, output_dir: str, print_only: bool):
-    """Generate a markdown daily digest of recent arXiv papers.
-
-    \b
-    Examples:
-      python main.py digest -c cs.AI -c cs.LG -d 3
-      python main.py digest -k "diffusion models" -k "LLM" --print-only
-    """
+           max_per_query: int, output_dir: str, print_only: bool, format: str):
+    """Generate a daily digest of recent arXiv papers."""
     try:
         if not categories and not keywords:
             # Default to a few popular categories
@@ -927,7 +1025,7 @@ def digest(categories: tuple, keywords: tuple, days: int,
         if print_only:
             click.echo(content)
         else:
-            filepath = save_digest(content, output_dir=output_dir)
+            filepath = save_digest(content, output_dir=output_dir, format=format)
             click.echo(f"✓ Digest saved to: {filepath}")
             line_count = content.count('\n')
             click.echo(f"  ({line_count} lines, {len(content)} characters)")
@@ -1137,6 +1235,15 @@ def info(arxiv_id: str, full_abstract: bool, do_summarize: bool):
         themed_header(paper.title)
         click.echo(f"\nAuthors     : {', '.join(paper.authors)}")
         click.echo(f"arXiv ID    : {paper.id}")
+        
+        # Citations
+        try:
+            citations = get_citation_count(paper.id)
+            if citations is not None:
+                click.echo(f"Citations   : {citations} (via Semantic Scholar)")
+        except Exception:
+            pass
+
         click.echo(f"Published   : {paper.published.strftime('%Y-%m-%d')}")
         click.echo(f"Updated     : {paper.updated.strftime('%Y-%m-%d')}")
         click.echo(f"Categories  : {', '.join(paper.categories)}")
@@ -1195,10 +1302,16 @@ def pdf_info(path):
     click.echo('─' * 45)
 
 
-@cli.command('history')
+@cli.group('history')
+def history():
+    """View and manage your search history."""
+    pass
+
+
+@history.command('list')
 @click.option('--limit', '-n', default=20, show_default=True, help='Number of entries to show')
 @click.option('--clear', is_flag=True, help='Clear the search history')
-def history(limit, clear):
+def history_list(limit, clear):
     """View or clear your search history."""
     hist = SearchHistory()
     if clear:
@@ -1208,6 +1321,25 @@ def history(limit, clear):
         return
 
     click.echo(hist.format_history(limit))
+
+
+@history.command('stats')
+def history_stats():
+    """Display statistics about your search patterns."""
+    hist = SearchHistory()
+    stats = hist.get_stats()
+    
+    if not stats:
+        click.echo("No search history to analyze.")
+        return
+        
+    themed_header("Search Patterns Analytics")
+    themed_print(f"Total Searches  : {stats['total_searches']}", "info")
+    themed_print(f"Unique Queries  : {stats['unique_queries']}", "info")
+    
+    click.echo("\nTop 5 Most Frequent Queries:")
+    for query, count in stats['top_queries']:
+        click.echo(f"  - '{query}' ({count} times)")
 
 
 @cli.command('grep-pdf')
@@ -1282,6 +1414,29 @@ def recommend_papers(limit):
     for i, p in enumerate(results, 1):
         themed_print(f"{i}. {p.title}", "info")
         click.echo(f"   ID: {p.id} | {p.abs_url}\n")
+
+
+@cli.command('shell')
+@click.pass_context
+def shell_mode(ctx):
+    """Start an interactive shell session."""
+    shell = InteractiveShell(cli)
+    shell.start()
+
+
+@cli.command('categories')
+@click.argument('search', required=False)
+def list_categories(search):
+    """List all supported arXiv categories and their descriptions."""
+    themed_header("Supported arXiv Categories")
+    
+    table_data = []
+    for code, desc in ARXIV_CATEGORIES.items():
+        if not search or search.lower() in code.lower() or search.lower() in desc.lower():
+            table_data.append([code, desc])
+            
+    from tabulate import tabulate
+    click.echo(tabulate(table_data, headers=['Code', 'Description'], tablefmt='simple'))
 
 
 if __name__ == '__main__':
