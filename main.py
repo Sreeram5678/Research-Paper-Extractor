@@ -47,6 +47,7 @@ from research_paper_extractor.citations import (
 )
 from research_paper_extractor.related_papers import find_related_papers, format_related_papers
 from research_paper_extractor.pdf_manager import PDFManager
+from research_paper_extractor.history import SearchHistory
 from research_paper_extractor import config_manager
 
 # Set up logging
@@ -126,6 +127,10 @@ def search(query: str, max_results: Optional[int], download_dir: Optional[str],
                 categories=list(categories) if categories else None,
                 sort_by=sort_by
             )
+        
+        # Log to history
+        hist = SearchHistory()
+        hist.add_entry(query, filters={"categories": categories, "sort_by": sort_by}, results_count=len(papers))
 
         if not papers:
             click.echo("No papers found matching your query.")
@@ -1131,6 +1136,21 @@ def pdf_info(path):
             value = f"{value / 1024 / 1024:.2f} MB"
         click.echo(f"{key.replace('_', ' ').title():<15} | {value}")
     click.echo('─' * 45)
+
+
+@cli.command('history')
+@click.option('--limit', '-n', default=20, show_default=True, help='Number of entries to show')
+@click.option('--clear', is_flag=True, help='Clear the search history')
+def history(limit, clear):
+    """View or clear your search history."""
+    hist = SearchHistory()
+    if clear:
+        if click.confirm("Clear all search history?"):
+            hist.clear()
+            click.echo("✓ Search history cleared.")
+        return
+
+    click.echo(hist.format_history(limit))
 
 
 if __name__ == '__main__':
