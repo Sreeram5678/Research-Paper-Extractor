@@ -1216,6 +1216,15 @@ def info(arxiv_id: str, full_abstract: bool, do_summarize: bool):
         themed_header(paper.title)
         click.echo(f"\nAuthors     : {', '.join(paper.authors)}")
         click.echo(f"arXiv ID    : {paper.id}")
+        
+        # Citations
+        try:
+            citations = get_citation_count(paper.id)
+            if citations is not None:
+                click.echo(f"Citations   : {citations} (via Semantic Scholar)")
+        except Exception:
+            pass
+
         click.echo(f"Published   : {paper.published.strftime('%Y-%m-%d')}")
         click.echo(f"Updated     : {paper.updated.strftime('%Y-%m-%d')}")
         click.echo(f"Categories  : {', '.join(paper.categories)}")
