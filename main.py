@@ -1,19 +1,24 @@
 #!/usr/bin/env python3
 """
-ArXiv Paper Downloader v2.0 — Main CLI interface
+🚀 Research Paper Extractor v2.0.0 — Modern Research Toolkit
 
-New commands:
-  export         Export paper citations (BibTeX, RIS, APA, plain)
-  analyze        Run analytics on a search result set
-  summarize      Show TF-IDF key-point summary of paper abstract(s)
+Available Commands:
+  search         Search arXiv and Semantic Scholar
+  shell          NEW: Interactive persistent session
+  recommend      NEW: Activity-based suggestions
+  compare        NEW: Side-by-side paper analysis
+  grep-pdf       NEW: Search text inside downloaded PDFs
+  library        Manage local library (add/list/tag/rate/note/export)
+  digest         Generate daily research digest (MD/HTML)
+  analyze        Run analytics with visualizations
+  summarize      Show RAKE key-point summary
   watch          Manage the keyword/author watchlist
-  check-alerts   Check watchlist for new papers
-  library        Manage your local paper library (add/list/tag/rate/note)
-  batch          Download from a .txt/.csv batch file
-  digest         Generate a markdown daily digest
-  citations      Look up citation counts via Semantic Scholar
+  check-alerts   Fetch new papers for all subscriptions
+  citations      Look up Semantic Scholar citation counts
   related        Find related papers for a given arXiv ID
-  config         View / set user configuration
+  categories     FULL LIST of arXiv categories
+  config         Manage CLI settings (Themes, URLs)
+  open           Open paper in browser
 """
 
 import click
@@ -909,6 +914,80 @@ def library_import_bib(bib_file: str, fetch_metadata: bool):
                     added_count += 1
                 
     click.echo(f"✓ Successfully imported {added_count} new papers to library.")
+
+
+@library.command('sync-metadata')
+@click.option('--arxiv-id', '-i', default=None, help='Sync metadata for a specific arXiv ID')
+@click.option('--all', 'sync_all', is_flag=True, help='Sync metadata for all papers in library')
+def library_sync_metadata(arxiv_id: Optional[str], sync_all: bool):
+    """Sync citation counts and metadata for papers from Semantic Scholar."""
+    from research_paper_extractor.citations import get_citation_count
+    from datetime import datetime, timezone
+    
+    lib = PaperLibrary()
+    
+    if arxiv_id:
+        papers_to_sync = [lib.get_paper(arxiv_id)] if lib.get_paper(arxiv_id) else []
+    elif sync_all:
+        papers_to_sync = lib.list_papers(limit=1000)
+    else:
+        click.echo("Please specify --arxiv-id or --all.")
+        return
+        
+    if not papers_to_sync:
+        click.echo("No papers found to sync.")
+        return
+        
+    click.echo(f"Syncing {len(papers_to_sync)} papers...")
+    synced_count = 0
+    with click.progressbar(papers_to_sync, label='Syncing metadata') as bar:
+        for p in bar:
+            aid = p.get('arxiv_id')
+            if not aid:
+                continue
+                
+            citations = get_citation_count(aid)
+            if citations:
+                metadata = {
+                    'citation_count': citations['citation_count'],
+                    'last_synced': datetime.now(timezone.utc).isoformat()
+                }
+                if lib.update_paper_metadata(aid, metadata):
+                    synced_count += 1
+                    
+    click.echo(f"✓ Finished syncing metadata for {synced_count} paper(s).")
+
+
+@cli.command()
+@click.argument('id1', required=True)
+@click.argument('id2', required=True)
+@click.option('--ai', is_flag=True, help='Use Gemini AI for deep comparison')
+def compare(id1: str, id2: str, ai: bool):
+    """Compare two papers by their arXiv IDs."""
+    from research_paper_extractor.comparison import PaperComparator
+    from research_paper_extractor.arxiv_api import ArxivAPI
+    
+    api = ArxivAPI()
+    click.echo(f"Fetching metadata for {id1} and {id2}...")
+    
+    p1 = api.get_paper_by_id(id1)
+    p2 = api.get_paper_by_id(id2)
+    
+    if not p1 or not p2:
+        click.echo("Error: Could not fetch both papers.")
+        return
+        
+    pc = PaperComparator()
+    
+    if ai:
+        click.echo("Generating AI comparison report (this may take a few seconds)...")
+        report = pc.ai_compare(p1, p2)
+        click.echo("\n── AI COMPARISON REPORT ──────────────────")
+        click.echo(report)
+        click.echo("──────────────────────────────────────────")
+    else:
+        diff = pc.compare(p1, p2)
+        click.echo(pc.format_comparison_report(p1, p2, diff))
 
 
 # ══════════════════════════════════════════════════════════════════════════════

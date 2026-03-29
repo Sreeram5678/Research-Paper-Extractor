@@ -70,6 +70,17 @@ ARXIV_CATEGORIES = {
     # Economics
     'econ.EM':   'Econometrics',
     'econ.GN':   'General Economics',
+    'econ.TH':   'Theoretical Economics',
+    'q-fin.ST':  'Statistical Finance',
+    'q-fin.CP':  'Computational Finance',
+    'q-fin.PM':  'Portfolio Management',
+    'math.AP':   'Analysis of PDEs',
+    'math.DG':   'Differential Geometry',
+    'math.NT':   'Number Theory',
+    'cs.OS':     'Operating Systems',
+    'cs.AR':     'Hardware Architecture',
+    'cs.MA':     'Multiagent Systems',
+    'cs.FL':     'Formal Languages and Automata Theory',
 }
 
 def get_download_dir():
