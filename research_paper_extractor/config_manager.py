@@ -23,6 +23,7 @@ DEFAULTS = {
         'show_abstract_preview': 'true',
         'abstract_preview_length': '200',
         'date_format': '%Y-%m-%d',
+        'theme': 'cyan', # Options: cyan, green, blue, yellow, white
     },
     'watchlist': {
         'lookback_days': '7',

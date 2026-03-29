@@ -22,7 +22,31 @@ from typing import List, Optional, Dict, Any
 
 from .arxiv_api import ArxivPaper
 
+import click
+from . import config_manager
+
 logger = logging.getLogger(__name__)
+
+def themed_print(message: str, type: str = "info"):
+    """Prints a message with colors based on the current theme."""
+    theme = config_manager.get('display', 'theme', fallback='cyan')
+    
+    colors = {
+        "info": theme,
+        "success": "green",
+        "warning": "yellow",
+        "error": "red",
+        "header": "magenta"
+    }
+    
+    color = colors.get(type, theme)
+    click.secho(message, fg=color)
+
+def themed_header(message: str):
+    """Prints a themed header with borders."""
+    themed_print("=" * 60, "header")
+    themed_print(f"  {message.upper()}", "header")
+    themed_print("=" * 60, "header")
 
 
 # ── Filtering ─────────────────────────────────────────────────────────────────
