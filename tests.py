@@ -16,6 +16,7 @@ import os
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch, MagicMock
 from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
@@ -448,6 +449,68 @@ class TestMarkdownExporter(unittest.TestCase):
             count = export_library_to_markdown(papers, tmpdir)
             self.assertEqual(count, 1)
             self.assertTrue(os.path.exists(os.path.join(tmpdir, '2301.07041.md')))
+
+
+# ===========================================================================
+# Test: Paper Comparator (AI Mocked)
+# ===========================================================================
+
+class TestPaperComparator(unittest.TestCase):
+
+    def test_compare_basic(self):
+        from research_paper_extractor.comparison import PaperComparator
+        p1 = _make_paper('2401.00001', title='Neural Nets', summary='Paper on ML.')
+        p2 = _make_paper('2401.00002', title='Deep Learning', summary='Another paper on ML.')
+        
+        diff = PaperComparator.compare(p1, p2)
+        self.assertIn('similarity_score', diff)
+        self.assertGreater(diff['similarity_score'], 0)
+
+    @patch('google.generativeai.GenerativeModel')
+    @patch.dict(os.environ, {"GOOGLE_API_KEY": "test_key"})
+    def test_ai_compare(self, mock_model):
+        from research_paper_extractor.comparison import PaperComparator
+        
+        # Mocking the AI response
+        mock_instance = mock_model.return_value
+        mock_instance.generate_content.return_value.text = "These papers are similar."
+        
+        p1 = _make_paper()
+        p2 = _make_paper(arxiv_id='2401.00002')
+        
+        report = PaperComparator.ai_compare(p1, p2)
+        mock_instance.generate_content.assert_called_once()
+
+
+# ===========================================================================
+# Test: Search History
+# ===========================================================================
+
+class TestSearchHistory(unittest.TestCase):
+
+    def setUp(self):
+        self.tmp_hist = tempfile.NamedTemporaryFile(suffix='.json', delete=False)
+        self.tmp_hist.close()
+        from research_paper_extractor.history import SearchHistory
+        self.h = SearchHistory(history_file=self.tmp_hist.name)
+
+    def tearDown(self):
+        if os.path.exists(self.tmp_hist.name):
+            os.unlink(self.tmp_hist.name)
+
+    def test_add_and_get_history(self):
+        self.h.add_entry("attention", results_count=5)
+        self.h.add_entry("transformers", results_count=10)
+        
+        hist = self.h.get_history()
+        self.assertEqual(len(hist), 2)
+        self.assertEqual(hist[0]["query"], "transformers")
+        self.assertEqual(hist[1]["query"], "attention")
+
+    def test_clear_history(self):
+        self.h.add_entry("test")
+        self.h.clear()
+        self.assertEqual(len(self.h.get_history()), 0)
 
 
 # ===========================================================================

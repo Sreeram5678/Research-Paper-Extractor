@@ -990,6 +990,39 @@ def compare(id1: str, id2: str, ai: bool):
         click.echo(pc.format_comparison_report(p1, p2, diff))
 
 
+@cli.command('history')
+@click.option('--limit', '-l', default=10, show_default=True, help='Number of recent searches to show')
+@click.option('--stats', 'show_stats', is_flag=True, help='Show search history statistics')
+def cli_history(limit: int, show_stats: bool):
+    """Show your recent search history."""
+    from research_paper_extractor.history import SearchHistory
+    h = SearchHistory()
+    if show_stats:
+        stats = h.get_stats()
+        if not stats:
+            click.echo("No search history found.")
+            return
+        click.echo("\n── Search History Statistics ─────────────")
+        click.echo(f"  Total searches : {stats['total_searches']}")
+        click.echo(f"  Unique queries : {stats['unique_queries']}")
+        click.echo("\n  Top Queries:")
+        for q, count in stats['top_queries']:
+            click.echo(f"  • '{q}': {count} times")
+        click.echo("──────────────────────────────────────────")
+    else:
+        click.echo(h.format_history(limit=limit))
+
+
+@cli.command('clear-history')
+@click.confirmation_option(prompt='Are you sure you want to clear your search history?')
+def cli_history_clear():
+    """Clear all entries from your search history."""
+    from research_paper_extractor.history import SearchHistory
+    h = SearchHistory()
+    h.clear()
+    click.echo("✓ Search history cleared.")
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # FEATURE 7 — Batch download
 # ══════════════════════════════════════════════════════════════════════════════
