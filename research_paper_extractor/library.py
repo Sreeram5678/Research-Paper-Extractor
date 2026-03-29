@@ -356,3 +356,33 @@ class PaperLibrary:
         except Exception as e:
             logger.error(f"Error exporting to BibTeX: {e}")
             return False
+
+    def find_duplicates(self) -> List[tuple]:
+        """
+        Find duplicate or highly similar papers in the library.
+        Returns a list of tuples: ((id1, title1), (id2, title2), similarity_score)
+        """
+        from difflib import SequenceMatcher
+        
+        papers = self.list_papers(limit=10000)
+        duplicates = []
+        n = len(papers)
+        
+        for i in range(n):
+            for j in range(i + 1, n):
+                p1, p2 = papers[i], papers[j]
+                
+                # Check for exact title match (lowercased)
+                title1 = p1['title'].lower()
+                title2 = p2['title'].lower()
+                
+                if title1 == title2:
+                    duplicates.append(((p1['arxiv_id'], p1['title']), (p2['arxiv_id'], p2['title']), 1.0))
+                    continue
+                    
+                # Check for high similarity
+                sim = SequenceMatcher(None, title1, title2).ratio()
+                if sim >= 0.85:
+                    duplicates.append(((p1['arxiv_id'], p1['title']), (p2['arxiv_id'], p2['title']), sim))
+                    
+        return sorted(duplicates, key=lambda x: x[2], reverse=True)
