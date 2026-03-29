@@ -18,6 +18,7 @@ New commands:
 
 import click
 import sys
+import os
 from pathlib import Path
 from typing import List, Optional
 import logging
@@ -45,6 +46,7 @@ from research_paper_extractor.citations import (
     get_citation_count, enrich_papers_with_citations, format_citation_table
 )
 from research_paper_extractor.related_papers import find_related_papers, format_related_papers
+from research_paper_extractor.pdf_manager import PDFManager
 from research_paper_extractor import config_manager
 
 # Set up logging
@@ -1080,6 +1082,16 @@ def info(arxiv_id: str, full_abstract: bool, do_summarize: bool):
         if paper.pdf_url:
             click.echo(f"PDF URL     : {paper.pdf_url}")
 
+        # Check for local file
+        lib = PaperLibrary()
+        local_path = lib.get_file_path(arxiv_id)
+        if local_path and os.path.exists(local_path):
+            click.echo(f"Local Path  : {local_path}")
+            pdf_meta = PDFManager.get_metadata(local_path)
+            if "error" not in pdf_meta:
+                click.echo(f"PDF Pages   : {pdf_meta['page_count']}")
+                click.echo(f"File Size   : {pdf_meta['file_size'] / 1024 / 1024:.2f} MB")
+
         click.echo('\nAbstract:')
         if full_abstract:
             click.echo(paper.summary)
@@ -1099,7 +1111,27 @@ def info(arxiv_id: str, full_abstract: bool, do_summarize: bool):
         sys.exit(1)
 
 
-# ══════════════════════════════════════════════════════════════════════════════
+
+@cli.command('pdf-info')
+@click.argument('path', type=click.Path(exists=True))
+def pdf_info(path):
+    """Extract and display metadata directly from a PDF file."""
+    click.echo(f"Extracting metadata from: {path}")
+    meta = PDFManager.get_metadata(path)
+    
+    if "error" in meta:
+        click.echo(f"Error: {meta['error']}", err=True)
+        return
+
+    click.echo('\n' + '─' * 45)
+    click.echo(f"{'Property':<15} | {'Value'}")
+    click.echo('─' * 45)
+    for key, value in meta.items():
+        if key == 'file_size':
+            value = f"{value / 1024 / 1024:.2f} MB"
+        click.echo(f"{key.replace('_', ' ').title():<15} | {value}")
+    click.echo('─' * 45)
+
 
 if __name__ == '__main__':
     cli()
