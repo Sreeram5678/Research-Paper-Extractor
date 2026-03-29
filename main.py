@@ -1,10 +1,24 @@
 #!/usr/bin/env python3
 """
-ArXiv Paper Downloader - Main CLI interface
+ArXiv Paper Downloader v2.0 — Main CLI interface
+
+New commands:
+  export         Export paper citations (BibTeX, RIS, APA, plain)
+  analyze        Run analytics on a search result set
+  summarize      Show TF-IDF key-point summary of paper abstract(s)
+  watch          Manage the keyword/author watchlist
+  check-alerts   Check watchlist for new papers
+  library        Manage your local paper library (add/list/tag/rate/note)
+  batch          Download from a .txt/.csv batch file
+  digest         Generate a markdown daily digest
+  citations      Look up citation counts via Semantic Scholar
+  related        Find related papers for a given arXiv ID
+  config         View / set user configuration
 """
 
 import click
 import sys
+from pathlib import Path
 from typing import List, Optional
 import logging
 
@@ -12,25 +26,56 @@ from research_paper_extractor.arxiv_api import ArxivAPI, ArxivPaper
 from research_paper_extractor.downloader import PaperDownloader
 from research_paper_extractor.config import DEFAULT_MAX_RESULTS, ARXIV_CATEGORIES
 
+# ── Feature imports ────────────────────────────────────────────────────────────
+from research_paper_extractor.citation_exporter import (
+    export_citations, EXPORT_FORMATS, FORMAT_EXTENSIONS
+)
+from research_paper_extractor.analytics import analyze_papers, format_analytics_report
+from research_paper_extractor.summarizer import summarize_paper
+from research_paper_extractor.watchlist import (
+    add_keyword, remove_keyword, add_author, remove_author,
+    list_watchlist, clear_watchlist, check_for_new_papers, format_watchlist_results
+)
+from research_paper_extractor.library import PaperLibrary
+from research_paper_extractor.batch_downloader import (
+    resolve_batch, create_sample_batch_file
+)
+from research_paper_extractor.digest import generate_digest, save_digest
+from research_paper_extractor.citations import (
+    get_citation_count, enrich_papers_with_citations, format_citation_table
+)
+from research_paper_extractor.related_papers import find_related_papers, format_related_papers
+from research_paper_extractor import config_manager
+
 # Set up logging
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.WARNING,  # Quieter default — only show warnings+
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
 
+
+# ══════════════════════════════════════════════════════════════════════════════
+# CLI Root
+# ══════════════════════════════════════════════════════════════════════════════
+
 @click.group()
-@click.version_option(version='1.0.0')
+@click.version_option(version='2.0.0')
 def cli():
-    """ArXiv Paper Downloader - Automatically download research papers from arXiv."""
+    """ArXiv Paper Downloader v2.0 — Search, download, and manage research papers."""
     pass
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# EXISTING COMMANDS (unchanged API, minor improvements)
+# ══════════════════════════════════════════════════════════════════════════════
 
 @cli.command()
 @click.argument('query', required=True)
-@click.option('--max-results', '-n', default=DEFAULT_MAX_RESULTS, 
-              help=f'Maximum number of papers to find (default: {DEFAULT_MAX_RESULTS})')
+@click.option('--max-results', '-n', default=None, type=int,
+              help=f'Maximum papers to find (default: from config)')
 @click.option('--download-dir', '-d', default=None,
-              help='Directory to download papers (default: ./downloads)')
+              help='Directory to download papers (default: from config)')
 @click.option('--categories', '-c', multiple=True,
               help='arXiv categories to search in (e.g., cs.AI, cs.LG)')
 @click.option('--sort-by', default='relevance',
@@ -42,71 +87,77 @@ def cli():
               help='Automatically download all found papers without confirmation')
 @click.option('--recent-days', type=int, default=None,
               help='Only show papers from the last N days')
-def search(query: str, max_results: int, download_dir: Optional[str], 
-          categories: tuple, sort_by: str, preview_only: bool, 
-          auto_download: bool, recent_days: Optional[int]):
+@click.option('--add-to-library', '-l', is_flag=True,
+              help='Add search results to your local library')
+def search(query: str, max_results: Optional[int], download_dir: Optional[str],
+           categories: tuple, sort_by: str, preview_only: bool,
+           auto_download: bool, recent_days: Optional[int], add_to_library: bool):
     """Search and download papers from arXiv based on a query."""
-    
+
     try:
-        # Initialize API and downloader
         api = ArxivAPI()
-        downloader = PaperDownloader(download_dir, topic=query)
-        
+        _max = max_results or config_manager.get_max_results_from_config()
+        _dir = download_dir or config_manager.get_download_dir_from_config()
+        downloader = PaperDownloader(_dir, topic=query)
+
         click.echo(f"Searching arXiv for: '{query}'")
         if categories:
             click.echo(f"Categories: {', '.join(categories)}")
-        
+
         # Validate categories
         valid_categories = list(ARXIV_CATEGORIES.keys())
         invalid_cats = [cat for cat in categories if cat not in valid_categories]
         if invalid_cats:
             click.echo(f"Warning: Invalid categories: {', '.join(invalid_cats)}")
-            categories = [cat for cat in categories if cat in valid_categories]
-        
-        # Search for papers
+            categories = tuple(cat for cat in categories if cat in valid_categories)
+
+        # Search
         if recent_days:
-            papers = api.search_recent(query, days=recent_days, max_results=max_results)
+            papers = api.search_recent(query, days=recent_days, max_results=_max)
             click.echo(f"Filtering for papers from last {recent_days} days")
         else:
             papers = api.search(
-                query=query,
-                max_results=max_results,
+                query=query, max_results=_max,
                 categories=list(categories) if categories else None,
                 sort_by=sort_by
             )
-        
+
         if not papers:
             click.echo("No papers found matching your query.")
             return
-        
-        # Show results summary
-        summary = downloader.get_paper_info_summary(papers)
-        click.echo(summary)
-        
+
+        click.echo(downloader.get_paper_info_summary(papers))
+
+        # Optionally add to library
+        if add_to_library:
+            lib = PaperLibrary()
+            added = sum(1 for p in papers if lib.add_paper(p))
+            click.echo(f"Added {added} new paper(s) to your library.")
+
         if preview_only:
-            click.echo("Preview mode - no papers downloaded.")
+            click.echo("Preview mode — no papers downloaded.")
             return
-        
-        # Download papers
+
         if auto_download or click.confirm(f"\nDownload {len(papers)} papers?"):
             click.echo("\nStarting downloads...")
             downloaded_files = downloader.download_papers(papers)
-            
-            # Show download summary
-            download_summary = downloader.create_download_summary(downloaded_files)
-            click.echo(download_summary)
-            
+            click.echo(downloader.create_download_summary(downloaded_files))
             if downloaded_files:
                 click.echo("Download completed successfully!")
+                if add_to_library:
+                    lib = PaperLibrary()
+                    for p, fp in zip(papers, downloaded_files):
+                        lib.set_file_path(p.id, fp)
             else:
                 click.echo("No papers were downloaded.")
         else:
             click.echo("Download cancelled.")
-            
+
     except Exception as e:
         logger.error(f"Error during search: {e}")
         click.echo(f"Error: {e}", err=True)
         sys.exit(1)
+
 
 @cli.command()
 @click.argument('arxiv_id', required=True)
@@ -114,137 +165,137 @@ def search(query: str, max_results: int, download_dir: Optional[str],
               help='Directory to download paper (default: ./downloads)')
 @click.option('--filename', '-f', default=None,
               help='Custom filename for the download (without extension)')
-def download_by_id(arxiv_id: str, download_dir: Optional[str], filename: Optional[str]):
+@click.option('--add-to-library', '-l', is_flag=True,
+              help='Add paper to your local library after download')
+def download_by_id(arxiv_id: str, download_dir: Optional[str],
+                   filename: Optional[str], add_to_library: bool):
     """Download a specific paper by its arXiv ID."""
-    
+
     try:
         api = ArxivAPI()
-        # Use the arxiv_id as topic for single paper downloads
-        downloader = PaperDownloader(download_dir, topic=f"paper_{arxiv_id}")
-        
+        _dir = download_dir or config_manager.get_download_dir_from_config()
+        downloader = PaperDownloader(_dir, topic=f"paper_{arxiv_id}")
+
         click.echo(f"Looking up arXiv paper: {arxiv_id}")
-        
         paper = api.get_paper_by_id(arxiv_id)
         if not paper:
             click.echo(f"Paper with ID '{arxiv_id}' not found.")
             return
-        
-        # Show paper info
+
         click.echo(f"\nFound paper:")
         click.echo(f"   Title: {paper.title}")
         click.echo(f"   Authors: {', '.join(paper.authors)}")
         click.echo(f"   Published: {paper.published.strftime('%Y-%m-%d')}")
         click.echo(f"   Categories: {', '.join(paper.categories)}")
-        
+
+        if add_to_library:
+            lib = PaperLibrary()
+            lib.add_paper(paper)
+            click.echo("   Added to library.")
+
         if click.confirm(f"\nDownload this paper?"):
             click.echo("\nStarting download...")
             filepath = downloader.download_paper(paper, filename)
-            
             if filepath:
                 click.echo(f"Downloaded successfully: {filepath}")
+                if add_to_library:
+                    PaperLibrary().set_file_path(paper.id, filepath)
             else:
                 click.echo("Download failed.")
         else:
             click.echo("Download cancelled.")
-            
+
     except Exception as e:
         logger.error(f"Error downloading paper: {e}")
         click.echo(f"Error: {e}", err=True)
         sys.exit(1)
 
+
 @cli.command()
 @click.argument('author_name', required=True)
-@click.option('--max-results', '-n', default=DEFAULT_MAX_RESULTS,
-              help=f'Maximum number of papers to find (default: {DEFAULT_MAX_RESULTS})')
+@click.option('--max-results', '-n', default=None, type=int,
+              help='Maximum number of papers to find (default: from config)')
 @click.option('--download-dir', '-d', default=None,
               help='Directory to download papers (default: ./downloads)')
 @click.option('--preview-only', '-p', is_flag=True,
               help='Only preview results without downloading')
-def search_by_author(author_name: str, max_results: int, download_dir: Optional[str], preview_only: bool):
+def search_by_author(author_name: str, max_results: Optional[int],
+                     download_dir: Optional[str], preview_only: bool):
     """Search for papers by a specific author."""
-    
+
     try:
         api = ArxivAPI()
-        # Use author name as topic for author-based searches
-        downloader = PaperDownloader(download_dir, topic=f"author_{author_name}")
-        
+        _max = max_results or config_manager.get_max_results_from_config()
+        _dir = download_dir or config_manager.get_download_dir_from_config()
+        downloader = PaperDownloader(_dir, topic=f"author_{author_name}")
+
         click.echo(f"Searching papers by author: {author_name}")
-        
-        papers = api.search_by_author(author_name, max_results)
-        
+        papers = api.search_by_author(author_name, _max)
+
         if not papers:
             click.echo(f"No papers found for author '{author_name}'.")
             return
-        
-        # Show results
-        summary = downloader.get_paper_info_summary(papers)
-        click.echo(summary)
-        
+
+        click.echo(downloader.get_paper_info_summary(papers))
+
         if preview_only:
-            click.echo("Preview mode - no papers downloaded.")
+            click.echo("Preview mode — no papers downloaded.")
             return
-        
+
         if click.confirm(f"\nDownload {len(papers)} papers?"):
             click.echo("\nStarting downloads...")
             downloaded_files = downloader.download_papers(papers)
-            
-            download_summary = downloader.create_download_summary(downloaded_files)
-            click.echo(download_summary)
-            
+            click.echo(downloader.create_download_summary(downloaded_files))
             if downloaded_files:
                 click.echo("Download completed successfully!")
             else:
                 click.echo("No papers were downloaded.")
         else:
             click.echo("Download cancelled.")
-            
+
     except Exception as e:
         logger.error(f"Error searching by author: {e}")
         click.echo(f"Error: {e}", err=True)
         sys.exit(1)
 
+
 @cli.command()
 def categories():
     """List available arXiv categories."""
-    
+
     click.echo("Available arXiv categories:\n")
-    
     for category, description in ARXIV_CATEGORIES.items():
         click.echo(f"  {category:<15} - {description}")
-    
-    click.echo(f"\nUse these categories with the --categories/-c option")
+    click.echo(f"\nUse with --categories/-c option")
     click.echo(f"   Example: python main.py search 'machine learning' -c cs.LG -c cs.AI")
+
 
 @cli.command()
 @click.option('--query', '-q', prompt=True, help='Search query')
-@click.option('--max-results', '-n', default=DEFAULT_MAX_RESULTS,
-              help=f'Maximum number of papers (default: {DEFAULT_MAX_RESULTS})')
-@click.option('--download-dir', '-d', default=None,
-              help='Download directory (default: ./downloads)')
-def interactive(query: str, max_results: int, download_dir: Optional[str]):
+@click.option('--max-results', '-n', default=None, type=int,
+              help='Maximum number of papers')
+@click.option('--download-dir', '-d', default=None, help='Download directory')
+def interactive(query: str, max_results: Optional[int], download_dir: Optional[str]):
     """Interactive mode for searching and downloading papers."""
-    
+
     try:
         api = ArxivAPI()
-        # Use the initial query as topic for interactive mode
-        downloader = PaperDownloader(download_dir, topic=f"interactive_{query}")
-        
+        _max = max_results or config_manager.get_max_results_from_config()
+        _dir = download_dir or config_manager.get_download_dir_from_config()
+        downloader = PaperDownloader(_dir, topic=f"interactive_{query}")
+
         while True:
             click.echo(f"\nSearching for: '{query}'")
-            
-            # Search papers
-            papers = api.search(query, max_results=max_results)
-            
+            papers = api.search(query, max_results=_max)
+
             if not papers:
                 click.echo("No papers found.")
                 if click.confirm("Try a different search?"):
                     query = click.prompt("Enter new search query")
-                    # Create a new downloader for the new query
-                    downloader = PaperDownloader(download_dir, topic=f"interactive_{query}")
+                    downloader = PaperDownloader(_dir, topic=f"interactive_{query}")
                     continue
                 break
-            
-            # Show papers with numbers
+
             click.echo(f"\nFound {len(papers)} papers:")
             for i, paper in enumerate(papers, 1):
                 click.echo(f"\n{i}. {paper.title}")
@@ -252,53 +303,709 @@ def interactive(query: str, max_results: int, download_dir: Optional[str]):
                 if len(paper.authors) > 2:
                     click.echo(f"   and {len(paper.authors) - 2} others")
                 click.echo(f"   ID: {paper.id} | Published: {paper.published.strftime('%Y-%m-%d')}")
-            
-            # Ask what to do
+
             click.echo(f"\nOptions:")
             click.echo(f"  'all' - Download all papers")
             click.echo(f"  '1,3,5' - Download specific papers by number")
             click.echo(f"  'none' - Don't download anything")
             click.echo(f"  'new' - New search")
-            
+
             choice = click.prompt("What would you like to do?", default="none").strip().lower()
-            
+
             if choice == "none":
                 click.echo("No downloads.")
             elif choice == "all":
                 downloaded_files = downloader.download_papers(papers)
-                summary = downloader.create_download_summary(downloaded_files)
-                click.echo(summary)
+                click.echo(downloader.create_download_summary(downloaded_files))
             elif choice == "new":
                 query = click.prompt("Enter new search query")
-                # Create a new downloader for the new query
-                downloader = PaperDownloader(download_dir, topic=f"interactive_{query}")
+                downloader = PaperDownloader(_dir, topic=f"interactive_{query}")
                 continue
             else:
-                # Parse specific paper numbers
                 try:
                     indices = [int(x.strip()) - 1 for x in choice.split(',')]
-                    selected_papers = [papers[i] for i in indices if 0 <= i < len(papers)]
-                    
-                    if selected_papers:
-                        downloaded_files = downloader.download_papers(selected_papers)
-                        summary = downloader.create_download_summary(downloaded_files)
-                        click.echo(summary)
+                    selected = [papers[i] for i in indices if 0 <= i < len(papers)]
+                    if selected:
+                        downloaded_files = downloader.download_papers(selected)
+                        click.echo(downloader.create_download_summary(downloaded_files))
                     else:
                         click.echo("Invalid paper numbers.")
                 except ValueError:
                     click.echo("Invalid format. Use numbers separated by commas (e.g., '1,3,5')")
-            
+
             if not click.confirm("\nContinue searching?"):
                 break
-        
+
         click.echo("\nGoodbye!")
-        
+
     except KeyboardInterrupt:
         click.echo("\n\nGoodbye!")
     except Exception as e:
         logger.error(f"Error in interactive mode: {e}")
         click.echo(f"Error: {e}", err=True)
         sys.exit(1)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# FEATURE 1 — Citation Export
+# ══════════════════════════════════════════════════════════════════════════════
+
+@cli.command()
+@click.argument('query', required=True)
+@click.option('--format', '-f', 'fmt',
+              type=click.Choice(list(EXPORT_FORMATS.keys())),
+              default='bibtex', show_default=True,
+              help='Citation export format')
+@click.option('--max-results', '-n', default=None, type=int,
+              help='Max papers to include')
+@click.option('--output', '-o', default=None,
+              help='Output file path (default: print to stdout)')
+@click.option('--categories', '-c', multiple=True,
+              help='arXiv categories to filter')
+def export(query: str, fmt: str, max_results: Optional[int],
+           output: Optional[str], categories: tuple):
+    """Export paper citations in BibTeX, RIS, APA, or plain text format.
+
+    \b
+    Examples:
+      python main.py export "transformers NLP" -f bibtex -o refs.bib
+      python main.py export "graph neural networks" -f apa
+    """
+    try:
+        api = ArxivAPI()
+        _max = max_results or config_manager.get_max_results_from_config()
+        click.echo(f"Searching: '{query}'...")
+        papers = api.search(
+            query=query, max_results=_max,
+            categories=list(categories) if categories else None,
+        )
+        if not papers:
+            click.echo("No papers found.")
+            return
+
+        click.echo(f"Exporting {len(papers)} papers as {fmt.upper()}...")
+        citation_text = export_citations(papers, fmt=fmt)
+
+        if output:
+            out_path = Path(output)
+            ext = FORMAT_EXTENSIONS[fmt]
+            if not output.endswith(ext):
+                out_path = Path(output + ext)
+            out_path.write_text(citation_text, encoding='utf-8')
+            click.echo(f"Citations saved to: {out_path}")
+        else:
+            click.echo('\n' + citation_text)
+
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# FEATURE 2 — Analytics
+# ══════════════════════════════════════════════════════════════════════════════
+
+@cli.command()
+@click.argument('query', required=True)
+@click.option('--max-results', '-n', default=50, show_default=True,
+              help='Number of papers to analyze')
+@click.option('--categories', '-c', multiple=True, help='arXiv categories to filter')
+@click.option('--output', '-o', default=None,
+              help='Save report to this file path')
+def analyze(query: str, max_results: int, categories: tuple, output: Optional[str]):
+    """Run analytics on arXiv search results.
+
+    Shows statistics on authors, categories, publication years, and keywords.
+
+    \b
+    Example:
+      python main.py analyze "deep learning" -n 100
+    """
+    try:
+        api = ArxivAPI()
+        click.echo(f"Fetching {max_results} papers for analysis: '{query}'...")
+        papers = api.search(
+            query=query, max_results=max_results,
+            categories=list(categories) if categories else None,
+        )
+        if not papers:
+            click.echo("No papers found.")
+            return
+
+        stats = analyze_papers(papers)
+        report = format_analytics_report(stats)
+        click.echo(report)
+
+        if output:
+            Path(output).write_text(report, encoding='utf-8')
+            click.echo(f"\nReport saved to: {output}")
+
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# FEATURE 3 — Summarize
+# ══════════════════════════════════════════════════════════════════════════════
+
+@cli.command()
+@click.argument('arxiv_id_or_query', required=True)
+@click.option('--sentences', '-s', default=3, show_default=True,
+              help='Number of key sentences to extract')
+@click.option('--keywords', '-k', default=8, show_default=True,
+              help='Number of keywords to show')
+@click.option('--is-query', '-q', is_flag=True,
+              help='Treat argument as a search query instead of an arXiv ID')
+@click.option('--max-results', '-n', default=None, type=int,
+              help='Max results when using --is-query')
+def summarize(arxiv_id_or_query: str, sentences: int, keywords: int,
+              is_query: bool, max_results: Optional[int]):
+    """Show a TF-IDF key-point summary of paper abstract(s).
+
+    \b
+    Examples:
+      python main.py summarize 2301.07041
+      python main.py summarize "attention mechanism" --is-query -n 3
+    """
+    try:
+        api = ArxivAPI()
+        papers: List[ArxivPaper] = []
+
+        if is_query:
+            _max = max_results or 5
+            click.echo(f"Searching: '{arxiv_id_or_query}'...")
+            papers = api.search(arxiv_id_or_query, max_results=_max)
+        else:
+            paper = api.get_paper_by_id(arxiv_id_or_query)
+            if paper:
+                papers = [paper]
+
+        if not papers:
+            click.echo("No papers found.")
+            return
+
+        for paper in papers:
+            click.echo('\n' + '─' * 65)
+            click.echo(summarize_paper(paper, max_sentences=sentences, top_keywords=keywords))
+        click.echo('─' * 65)
+
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# FEATURE 4 — Watchlist management
+# ══════════════════════════════════════════════════════════════════════════════
+
+@cli.group()
+def watch():
+    """Manage your keyword/author watchlist for new paper alerts."""
+    pass
+
+
+@watch.command('add-keyword')
+@click.argument('keyword', required=True)
+def watch_add_keyword(keyword: str):
+    """Add a keyword to your watchlist."""
+    if add_keyword(keyword):
+        click.echo(f"✓ Added keyword: '{keyword}'")
+    else:
+        click.echo(f"Keyword '{keyword}' is already in your watchlist.")
+
+
+@watch.command('remove-keyword')
+@click.argument('keyword', required=True)
+def watch_remove_keyword(keyword: str):
+    """Remove a keyword from your watchlist."""
+    if remove_keyword(keyword):
+        click.echo(f"✓ Removed keyword: '{keyword}'")
+    else:
+        click.echo(f"Keyword '{keyword}' not found in watchlist.")
+
+
+@watch.command('add-author')
+@click.argument('author', required=True)
+def watch_add_author(author: str):
+    """Add an author to your watchlist."""
+    if add_author(author):
+        click.echo(f"✓ Added author: '{author}'")
+    else:
+        click.echo(f"Author '{author}' is already in your watchlist.")
+
+
+@watch.command('remove-author')
+@click.argument('author', required=True)
+def watch_remove_author(author: str):
+    """Remove an author from your watchlist."""
+    if remove_author(author):
+        click.echo(f"✓ Removed author: '{author}'")
+    else:
+        click.echo(f"Author '{author}' not found in watchlist.")
+
+
+@watch.command('list')
+def watch_list():
+    """Show your current watchlist."""
+    data = list_watchlist()
+    click.echo("\n── Watchlist ─────────────────────────────")
+    if data['keywords']:
+        click.echo("Keywords:")
+        for kw in data['keywords']:
+            click.echo(f"  • {kw}")
+    else:
+        click.echo("Keywords: (none)")
+
+    if data['authors']:
+        click.echo("Authors:")
+        for au in data['authors']:
+            click.echo(f"  • {au}")
+    else:
+        click.echo("Authors: (none)")
+
+    lc = data.get('last_check')
+    click.echo(f"\nLast checked: {lc[:16] if lc else 'never'}")
+    click.echo("──────────────────────────────────────────")
+
+
+@watch.command('clear')
+@click.confirmation_option(prompt='Clear all watchlist entries?')
+def watch_clear():
+    """Clear all entries from your watchlist."""
+    clear_watchlist()
+    click.echo("Watchlist cleared.")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# FEATURE 5 — Check alerts
+# ══════════════════════════════════════════════════════════════════════════════
+
+@cli.command('check-alerts')
+@click.option('--days', '-d', default=7, show_default=True,
+              help='Check for papers published in the last N days')
+@click.option('--max-per-query', '-n', default=10, show_default=True,
+              help='Max results per keyword/author')
+@click.option('--download', is_flag=True,
+              help='Download found papers automatically')
+@click.option('--download-dir', default=None, help='Download directory')
+def check_alerts(days: int, max_per_query: int, download: bool,
+                 download_dir: Optional[str]):
+    """Check your watchlist for new papers since last check.
+
+    \b
+    Example:
+      python main.py check-alerts --days 3
+    """
+    try:
+        wl = list_watchlist()
+        if not wl['keywords'] and not wl['authors']:
+            click.echo("Your watchlist is empty. Use 'watch add-keyword' to add entries.")
+            return
+
+        click.echo(f"Checking for new papers (last {days} days)...")
+        results = check_for_new_papers(days=days, max_per_query=max_per_query)
+        click.echo(format_watchlist_results(results))
+
+        if download and results:
+            all_papers = [p for papers in results.values() for p in papers]
+            if click.confirm(f"\nDownload all {len(all_papers)} found papers?"):
+                _dir = download_dir or config_manager.get_download_dir_from_config()
+                downloader = PaperDownloader(_dir, topic='watchlist_alerts')
+                downloaded = downloader.download_papers(all_papers)
+                click.echo(downloader.create_download_summary(downloaded))
+
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# FEATURE 6 — Library management
+# ══════════════════════════════════════════════════════════════════════════════
+
+@cli.group()
+def library():
+    """Manage your local paper library (SQLite-backed)."""
+    pass
+
+
+@library.command('add')
+@click.argument('arxiv_id', required=True)
+def library_add(arxiv_id: str):
+    """Add a paper to your library by arXiv ID."""
+    api = ArxivAPI()
+    paper = api.get_paper_by_id(arxiv_id)
+    if not paper:
+        click.echo(f"Paper '{arxiv_id}' not found on arXiv.")
+        return
+    lib = PaperLibrary()
+    if lib.add_paper(paper):
+        click.echo(f"✓ Added: {paper.title[:60]}")
+    else:
+        click.echo("Paper is already in your library.")
+
+
+@library.command('list')
+@click.option('--unread', 'filter_read', flag_value=False, default=None,
+              help='Show only unread papers')
+@click.option('--read', 'filter_read', flag_value=True,
+              help='Show only read papers')
+@click.option('--tag', default=None, help='Filter by tag')
+@click.option('--rating', default=None, type=int,
+              help='Filter by minimum star rating (1-5)')
+@click.option('--limit', '-n', default=50, show_default=True)
+def library_list(filter_read, tag, rating, limit):
+    """List papers in your library."""
+    lib = PaperLibrary()
+    papers = lib.list_papers(read=filter_read, tag=tag, rating=rating, limit=limit)
+    click.echo(lib.format_library_list(papers))
+
+    stats = lib.get_stats()
+    click.echo(f"\nLibrary: {stats['total']} total | "
+               f"{stats['read']} read | {stats['unread']} unread")
+
+
+@library.command('mark-read')
+@click.argument('arxiv_id', required=True)
+@click.option('--unread', is_flag=True, help='Mark as unread instead')
+def library_mark_read(arxiv_id: str, unread: bool):
+    """Mark a paper as read or unread."""
+    lib = PaperLibrary()
+    if lib.mark_read(arxiv_id, read=not unread):
+        status = 'unread' if unread else 'read'
+        click.echo(f"✓ Marked {arxiv_id} as {status}.")
+    else:
+        click.echo(f"Paper '{arxiv_id}' not found in library.")
+
+
+@library.command('rate')
+@click.argument('arxiv_id', required=True)
+@click.argument('rating', type=click.IntRange(1, 5))
+def library_rate(arxiv_id: str, rating: int):
+    """Rate a paper 1-5 stars."""
+    lib = PaperLibrary()
+    if lib.set_rating(arxiv_id, rating):
+        click.echo(f"✓ Rated {arxiv_id}: {'★' * rating}{'☆' * (5 - rating)}")
+    else:
+        click.echo(f"Paper '{arxiv_id}' not found in library.")
+
+
+@library.command('note')
+@click.argument('arxiv_id', required=True)
+@click.argument('note', required=True)
+def library_note(arxiv_id: str, note: str):
+    """Add or update a personal note for a paper."""
+    lib = PaperLibrary()
+    if lib.add_note(arxiv_id, note):
+        click.echo(f"✓ Note saved for {arxiv_id}.")
+    else:
+        click.echo(f"Paper '{arxiv_id}' not found in library.")
+
+
+@library.command('tag')
+@click.argument('arxiv_id', required=True)
+@click.argument('tag', required=True)
+@click.option('--remove', is_flag=True, help='Remove this tag instead of adding')
+def library_tag(arxiv_id: str, tag: str, remove: bool):
+    """Add or remove a tag on a library paper."""
+    lib = PaperLibrary()
+    if remove:
+        lib.remove_tag(arxiv_id, tag)
+        click.echo(f"✓ Removed tag '{tag}' from {arxiv_id}.")
+    else:
+        lib.add_tag(arxiv_id, tag)
+        click.echo(f"✓ Added tag '{tag}' to {arxiv_id}.")
+
+
+@library.command('remove')
+@click.argument('arxiv_id', required=True)
+@click.confirmation_option(prompt='Remove this paper from your library?')
+def library_remove(arxiv_id: str):
+    """Remove a paper from your library."""
+    lib = PaperLibrary()
+    if lib.remove_paper(arxiv_id):
+        click.echo(f"✓ Removed {arxiv_id} from library.")
+    else:
+        click.echo(f"Paper '{arxiv_id}' not found in library.")
+
+
+@library.command('stats')
+def library_stats():
+    """Show library statistics."""
+    lib = PaperLibrary()
+    stats = lib.get_stats()
+    click.echo("\n── Library Statistics ────────────────────")
+    click.echo(f"  Total papers : {stats['total']}")
+    click.echo(f"  Read         : {stats['read']}")
+    click.echo(f"  Unread       : {stats['unread']}")
+    click.echo(f"  Rated papers : {stats['rated']}")
+    if stats['avg_rating']:
+        click.echo(f"  Avg rating   : {stats['avg_rating']:.1f} / 5.0")
+    click.echo("─────────────────────────────────────────")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# FEATURE 7 — Batch download
+# ══════════════════════════════════════════════════════════════════════════════
+
+@cli.command()
+@click.argument('batch_file', required=True)
+@click.option('--download-dir', '-d', default=None, help='Download directory')
+@click.option('--max-per-query', '-n', default=5, show_default=True,
+              help='Max papers per search query in the batch file')
+@click.option('--preview-only', '-p', is_flag=True,
+              help='Preview papers without downloading')
+@click.option('--add-to-library', '-l', is_flag=True,
+              help='Add resolved papers to your library')
+@click.option('--create-sample', is_flag=True,
+              help='Create a sample batch file at BATCH_FILE path')
+def batch(batch_file: str, download_dir: Optional[str], max_per_query: int,
+          preview_only: bool, add_to_library: bool, create_sample: bool):
+    """Download papers listed in a .txt or .csv batch file.
+
+    \b
+    Batch file format (.txt — one entry per line):
+      2301.07041          <- arXiv ID
+      attention mechanism <- search query (anything not matching ID format)
+      # Comments start with #
+
+    \b
+    Batch file format (.csv):
+      id,2301.07041
+      query,graph neural networks
+
+    \b
+    Examples:
+      python main.py batch papers.txt
+      python main.py batch --create-sample my_batch.txt
+    """
+    try:
+        if create_sample:
+            create_sample_batch_file(batch_file)
+            click.echo(f"Sample batch file created: {batch_file}")
+            return
+
+        click.echo(f"Resolving batch file: {batch_file}")
+        papers = resolve_batch(batch_file, max_results_per_query=max_per_query)
+
+        if not papers:
+            click.echo("No papers found from batch file.")
+            return
+
+        click.echo(f"\nResolved {len(papers)} papers:")
+        for i, paper in enumerate(papers, 1):
+            click.echo(f"  {i:>3}. [{paper.id}] {paper.title[:55]}")
+
+        if add_to_library:
+            lib = PaperLibrary()
+            added = sum(1 for p in papers if lib.add_paper(p))
+            click.echo(f"\nAdded {added} new paper(s) to library.")
+
+        if preview_only:
+            click.echo("\nPreview mode — no papers downloaded.")
+            return
+
+        if click.confirm(f"\nDownload all {len(papers)} papers?"):
+            _dir = download_dir or config_manager.get_download_dir_from_config()
+            downloader = PaperDownloader(_dir, topic='batch_download')
+            downloaded = downloader.download_papers(papers)
+            click.echo(downloader.create_download_summary(downloaded))
+
+    except FileNotFoundError as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# FEATURE 8 — Daily Digest
+# ══════════════════════════════════════════════════════════════════════════════
+
+@cli.command()
+@click.option('--categories', '-c', multiple=True,
+              help='arXiv categories (e.g. cs.AI cs.LG). Can repeat.')
+@click.option('--keywords', '-k', multiple=True,
+              help='Free-text keywords. Can repeat.')
+@click.option('--days', '-d', default=1, show_default=True,
+              help='Look-back window in days')
+@click.option('--max-per-query', '-n', default=5, show_default=True,
+              help='Max papers per category/keyword')
+@click.option('--output-dir', '-o', default='.', show_default=True,
+              help='Directory to save the digest markdown file')
+@click.option('--print-only', '-p', is_flag=True,
+              help='Print to stdout instead of saving to file')
+def digest(categories: tuple, keywords: tuple, days: int,
+           max_per_query: int, output_dir: str, print_only: bool):
+    """Generate a markdown daily digest of recent arXiv papers.
+
+    \b
+    Examples:
+      python main.py digest -c cs.AI -c cs.LG -d 3
+      python main.py digest -k "diffusion models" -k "LLM" --print-only
+    """
+    try:
+        if not categories and not keywords:
+            # Default to a few popular categories
+            categories = ('cs.AI', 'cs.LG', 'cs.CL')
+            click.echo("No categories/keywords specified — using defaults: cs.AI, cs.LG, cs.CL")
+
+        click.echo(f"Generating digest for last {days} day(s)...")
+        content = generate_digest(
+            categories=list(categories) if categories else None,
+            keywords=list(keywords) if keywords else None,
+            days=days,
+            max_per_query=max_per_query,
+        )
+
+        if print_only:
+            click.echo(content)
+        else:
+            filepath = save_digest(content, output_dir=output_dir)
+            click.echo(f"✓ Digest saved to: {filepath}")
+            line_count = content.count('\n')
+            click.echo(f"  ({line_count} lines, {len(content)} characters)")
+
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# FEATURE 9 — Citation counts
+# ══════════════════════════════════════════════════════════════════════════════
+
+@cli.command()
+@click.argument('query_or_id', required=True)
+@click.option('--is-id', '-i', is_flag=True,
+              help='Treat argument as a single arXiv ID')
+@click.option('--max-results', '-n', default=10, show_default=True,
+              help='Max papers when treating as a search query')
+def citations(query_or_id: str, is_id: bool, max_results: int):
+    """Look up citation counts from Semantic Scholar.
+
+    \b
+    Examples:
+      python main.py citations 2301.07041 --is-id
+      python main.py citations "attention is all you need" -n 5
+    """
+    try:
+        api = ArxivAPI()
+        papers: List[ArxivPaper] = []
+
+        if is_id:
+            paper = api.get_paper_by_id(query_or_id)
+            if paper:
+                papers = [paper]
+        else:
+            click.echo(f"Searching: '{query_or_id}'...")
+            papers = api.search(query_or_id, max_results=max_results)
+
+        if not papers:
+            click.echo("No papers found.")
+            return
+
+        click.echo(f"Looking up citation counts for {len(papers)} papers "
+                   f"(this may take a moment)...")
+        enriched = enrich_papers_with_citations(papers)
+        click.echo('\n' + format_citation_table(enriched))
+
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# FEATURE 10 — Related papers
+# ══════════════════════════════════════════════════════════════════════════════
+
+@cli.command()
+@click.argument('arxiv_id', required=True)
+@click.option('--max-results', '-n', default=10, show_default=True,
+              help='Number of related papers to find')
+@click.option('--download', '-d', is_flag=True,
+              help='Download the related papers')
+@click.option('--download-dir', default=None, help='Download directory')
+def related(arxiv_id: str, max_results: int, download: bool,
+            download_dir: Optional[str]):
+    """Discover papers related to a given arXiv paper.
+
+    Uses TF-IDF keyword extraction from the abstract to build a
+    related-work search query.
+
+    \b
+    Example:
+      python main.py related 2301.07041
+      python main.py related 2301.07041 -n 5 --download
+    """
+    try:
+        api = ArxivAPI()
+        click.echo(f"Fetching paper: {arxiv_id}")
+        paper = api.get_paper_by_id(arxiv_id)
+        if not paper:
+            click.echo(f"Paper '{arxiv_id}' not found.")
+            return
+
+        click.echo(f"Finding papers related to: {paper.title[:60]}")
+        related_papers = find_related_papers(paper, max_results=max_results)
+        click.echo(format_related_papers(paper, related_papers))
+
+        if download and related_papers:
+            if click.confirm(f"\nDownload {len(related_papers)} related papers?"):
+                _dir = download_dir or config_manager.get_download_dir_from_config()
+                downloader = PaperDownloader(_dir, topic=f'related_{arxiv_id}')
+                downloaded = downloader.download_papers(related_papers)
+                click.echo(downloader.create_download_summary(downloaded))
+
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# FEATURE 11 — Config management
+# ══════════════════════════════════════════════════════════════════════════════
+
+@cli.group()
+def config():
+    """View and manage user configuration settings."""
+    pass
+
+
+@config.command('show')
+def config_show():
+    """Display current configuration."""
+    click.echo(config_manager.show_config())
+
+
+@config.command('set')
+@click.argument('section')
+@click.argument('key')
+@click.argument('value')
+def config_set(section: str, key: str, value: str):
+    """Set a configuration value.
+
+    \b
+    Examples:
+      python main.py config set general max_results 20
+      python main.py config set general download_dir ~/my_papers
+      python main.py config set display show_abstract_preview false
+    """
+    config_manager.set_value(section, key, value)
+    click.echo(f"✓ Set [{section}] {key} = {value}")
+
+
+@config.command('reset')
+@click.confirmation_option(prompt='Reset all settings to defaults?')
+def config_reset():
+    """Reset all configuration to defaults."""
+    config_manager.reset_config()
+    click.echo("✓ Configuration reset to defaults.")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 
 if __name__ == '__main__':
     cli()
