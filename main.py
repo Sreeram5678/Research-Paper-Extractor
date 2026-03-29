@@ -48,6 +48,7 @@ from research_paper_extractor.citations import (
 from research_paper_extractor.related_papers import find_related_papers, format_related_papers
 from research_paper_extractor.pdf_manager import PDFManager
 from research_paper_extractor.history import SearchHistory
+from research_paper_extractor.semantic_scholar import SemanticScholarAPI
 from research_paper_extractor import config_manager
 
 # Set up logging
@@ -94,10 +95,12 @@ def cli():
               help='Add search results to your local library')
 @click.option('--manifest', '-m', is_flag=True,
               help='Save a JSON manifest file after downloading')
+@click.option('--source', '-s', default='arxiv', type=click.Choice(['arxiv', 'semantic_scholar', 'both']),
+              help='Search source (default: arxiv)')
 def search(query: str, max_results: Optional[int], download_dir: Optional[str],
            categories: tuple, sort_by: str, preview_only: bool,
            auto_download: bool, recent_days: Optional[int], add_to_library: bool,
-           manifest: bool):
+           manifest: bool, source: str):
     """Search and download papers from arXiv based on a query."""
 
     try:
@@ -118,15 +121,23 @@ def search(query: str, max_results: Optional[int], download_dir: Optional[str],
             categories = tuple(cat for cat in categories if cat in valid_categories)
 
         # Search
-        if recent_days:
-            papers = api.search_recent(query, days=recent_days, max_results=_max)
-            click.echo(f"Filtering for papers from last {recent_days} days")
-        else:
-            papers = api.search(
-                query=query, max_results=_max,
-                categories=list(categories) if categories else None,
-                sort_by=sort_by
-            )
+        papers = []
+        if source in ['arxiv', 'both']:
+            click.echo(f"Searching arXiv for: '{query}'")
+            if recent_days:
+                papers.extend(api.search_recent(query, days=recent_days, max_results=_max))
+            else:
+                papers.extend(api.search(
+                    query=query, max_results=_max,
+                    categories=list(categories) if categories else None,
+                    sort_by=sort_by
+                ))
+        
+        if source in ['semantic_scholar', 'both']:
+            ss_api = SemanticScholarAPI()
+            ss_papers = ss_api.search(query, max_results=_max)
+            click.echo(f"Found {len(ss_papers)} papers on Semantic Scholar")
+            papers.extend(ss_papers)
         
         # Log to history
         hist = SearchHistory()
