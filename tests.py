@@ -661,6 +661,17 @@ class TestPaperLibrary(unittest.TestCase):
         self.assertEqual(stats['total'], 1)
         self.assertEqual(stats['unread'], 1)
 
+    def test_find_duplicates(self):
+        p1 = _make_paper('2401.00001', title='Attention Mechanism in Neural Networks')
+        p2 = _make_paper('2401.00002', title='Attention Mechanism in Neural Networks!')
+        self.lib.add_paper(p1)
+        self.lib.add_paper(p2)
+        
+        dups = self.lib.find_duplicates()
+        self.assertEqual(len(dups), 1)
+        self.assertGreaterEqual(dups[0][2], 0.85)
+
+
 
 # ===========================================================================
 # Test: Webhooks

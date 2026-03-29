@@ -1056,6 +1056,46 @@ def library_search_pdfs(query: str, case_sensitive: bool):
         if len(matches) > 5:
             click.echo(f"  ... and {len(matches) - 5} more matches")
 
+@library.command('cleanup')
+@click.option('--auto', is_flag=True, help='Automatically remove the older duplicate')
+def library_cleanup(auto: bool):
+    """Find and remove duplicate papers in your library based on title similarity."""
+    lib = get_library()
+    click.echo("Scanning library for duplicate papers...")
+    duplicates = lib.find_duplicates()
+    
+    if not duplicates:
+        click.echo("✓ No duplicate papers found.")
+        return
+        
+    click.echo(f"Found {len(duplicates)} potential duplicates:\n")
+    
+    removed_count = 0
+    for i, (p1, p2, sim) in enumerate(duplicates, 1):
+        click.echo(f"Duplicate Pair {i} (Similarity: {sim:.2%})")
+        click.echo(f"  A: [{p1[0]}] {p1[1]}")
+        click.echo(f"  B: [{p2[0]}] {p2[1]}")
+        
+        if auto:
+            # Simple auto heuristic: remove B always
+            lib.remove_paper(p2[0])
+            click.echo(f"  -> Automatically removed B ({p2[0]})\n")
+            removed_count += 1
+        else:
+            action = click.prompt("Remove A, B, or pass?", type=click.Choice(['A', 'B', 'P', 'a', 'b', 'p'], case_sensitive=False), default='P')
+            if action.upper() == 'A':
+                lib.remove_paper(p1[0])
+                click.echo(f"  -> Removed A ({p1[0]})\n")
+                removed_count += 1
+            elif action.upper() == 'B':
+                lib.remove_paper(p2[0])
+                click.echo(f"  -> Removed B ({p2[0]})\n")
+                removed_count += 1
+            else:
+                click.echo("  -> Passed.\n")
+                
+    click.echo(f"Cleanup complete. Removed {removed_count} duplicate papers.")
+
 
 @cli.command()
 @click.argument('id1', required=True)
