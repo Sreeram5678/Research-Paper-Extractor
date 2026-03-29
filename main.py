@@ -1380,5 +1380,20 @@ def shell_mode(ctx):
     shell.start()
 
 
+@cli.command('categories')
+@click.argument('search', required=False)
+def list_categories(search):
+    """List all supported arXiv categories and their descriptions."""
+    themed_header("Supported arXiv Categories")
+    
+    table_data = []
+    for code, desc in ARXIV_CATEGORIES.items():
+        if not search or search.lower() in code.lower() or search.lower() in desc.lower():
+            table_data.append([code, desc])
+            
+    from tabulate import tabulate
+    click.echo(tabulate(table_data, headers=['Code', 'Description'], tablefmt='simple'))
+
+
 if __name__ == '__main__':
     cli()

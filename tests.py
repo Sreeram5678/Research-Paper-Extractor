@@ -375,6 +375,47 @@ class TestBatchDownloader(unittest.TestCase):
 
 
 # ===========================================================================
+# Test: BibTeX Parser
+# ===========================================================================
+
+class TestBibtexParser(unittest.TestCase):
+
+    def test_parse_simple_bib(self):
+        from research_paper_extractor.bibtex_parser import parse_bibtex_file
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.bib', delete=False) as f:
+            f.write("""
+            @article{paper1,
+                title = {Attention is All You Need},
+                author = {Vaswani, Ashish and Shazeer, Noam},
+                journal = {arXiv:1706.03762},
+                year = {2017}
+            }
+            """)
+            fname = f.name
+        try:
+            entries = parse_bibtex_file(fname)
+            self.assertEqual(len(entries), 1)
+            self.assertEqual(entries[0]['arxiv_id'], '1706.03762')
+        finally:
+            os.unlink(fname)
+
+    def test_bib_entry_to_paper_obj(self):
+        from research_paper_extractor.bibtex_parser import bib_entry_to_paper_obj
+        from research_paper_extractor.arxiv_api import ArxivPaper
+        entry = {
+            'arxiv_id': '2301.07041',
+            'title': 'Test Title',
+            'author': 'Author 1 and Author 2'
+        }
+        mock = bib_entry_to_paper_obj(entry)
+        self.assertIsNotNone(mock)
+        paper = ArxivPaper(mock)
+        self.assertEqual(paper.id, '2301.07041')
+        self.assertEqual(paper.title, 'Test Title')
+        self.assertIn('Author 1', paper.authors)
+
+
+# ===========================================================================
 # Test: Library
 # ===========================================================================
 
