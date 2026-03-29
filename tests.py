@@ -429,6 +429,24 @@ class TestPaperLibrary(unittest.TestCase):
         tags = json.loads(record['tags'])
         self.assertNotIn('ml', tags)
 
+    def test_get_all_tags(self):
+        self.lib.add_paper(self.paper)
+        self.lib.add_tag(self.paper.id, 'ml')
+        p2 = _make_paper(arxiv_id='2401.00002')
+        self.lib.add_paper(p2)
+        self.lib.add_tag(p2.id, 'ai')
+        all_tags = self.lib.get_all_tags()
+        self.assertEqual(all_tags, ['ai', 'ml'])
+
+    def test_add_tags_bulk(self):
+        self.lib.add_paper(self.paper)
+        p2 = _make_paper(arxiv_id='2401.00002')
+        self.lib.add_paper(p2)
+        count = self.lib.add_tags_bulk([self.paper.id, p2.id], 'reviewed')
+        self.assertEqual(count, 2)
+        self.assertIn('reviewed', json.loads(self.lib.get_paper(self.paper.id)['tags']))
+        self.assertIn('reviewed', json.loads(self.lib.get_paper(p2.id)['tags']))
+
     def test_add_note(self):
         self.lib.add_paper(self.paper)
         self.lib.add_note(self.paper.id, 'Great read!')
