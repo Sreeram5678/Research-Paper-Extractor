@@ -5,7 +5,12 @@ Produces bullet-point key-point summaries from paper abstracts without any AI AP
 
 import re
 import math
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Any
+try:
+    from rake_nltk import Rake
+    RAKE_AVAILABLE = True
+except ImportError:
+    RAKE_AVAILABLE = False
 from .arxiv_api import ArxivPaper
 
 # Extended stop words for academic text
@@ -58,15 +63,19 @@ def _compute_idf(documents: List[List[str]]) -> Dict[str, float]:
 
 def extract_keywords(text: str, top_n: int = 8) -> List[Tuple[str, float]]:
     """
-    Extract top keywords from text using TF-IDF over sentences.
-
-    Args:
-        text: Input text
-        top_n: Number of keywords to return
-
-    Returns:
-        List of (keyword, score) tuples sorted by score descending
+    Extract top keywords from text using RAKE or TF-IDF.
     """
+    if RAKE_AVAILABLE:
+        try:
+            r = Rake()
+            r.extract_keywords_from_text(text)
+            keywords = r.get_ranked_phrases_with_scores()[:top_n]
+            # Convert to (word, score) format
+            return [(word, score) for score, word in keywords]
+        except Exception:
+            pass
+
+    # Fallback to TF-IDF
     sentences = _split_sentences(text)
     if not sentences:
         tokens = _tokenize(text)
