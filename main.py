@@ -1028,6 +1028,35 @@ def library_analyze_keywords(limit: int, tag: Optional[str]):
     click.echo("──────────────────────────────────────────")
 
 
+@library.command('search-pdfs')
+@click.argument('query')
+@click.option('--case-sensitive', is_flag=True, help='Perform case-sensitive search')
+def library_search_pdfs(query: str, case_sensitive: bool):
+    """Search for text within all downloaded PDFs in the library."""
+    from research_paper_extractor.pdf_manager import PDFManager
+    from research_paper_extractor import config_manager
+    
+    download_dir = config_manager.get('general', 'download_dir')
+    if not os.path.exists(download_dir):
+        click.echo(f"Error: Download directory '{download_dir}' does not exist.")
+        return
+        
+    click.echo(f"Searching for '{query}' in {download_dir}...")
+    results = PDFManager.search_directory(download_dir, query, case_sensitive)
+    
+    if not results:
+        click.echo("No matches found in any PDFs.")
+        return
+        
+    for path, matches in results.items():
+        filename = os.path.basename(path)
+        click.echo(f"\n📄 {filename} ({len(matches)} matches):")
+        for m in matches[:5]: # Show first 5 matches per file
+            click.echo(f"  [Page {m['page']}] ...{m['context']}...")
+        if len(matches) > 5:
+            click.echo(f"  ... and {len(matches) - 5} more matches")
+
+
 @cli.command()
 @click.argument('id1', required=True)
 @click.argument('id2', required=True)

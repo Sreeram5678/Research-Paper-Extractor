@@ -158,3 +158,16 @@ Desktop.ini
 # Project specific
 downloads/
 *.pdf
+research_paper_extractor/library.db
+research_paper_extractor/library.db-journal
+.arxiv_downloader.ini
+search_history.json
+*.bib
+*.ris
+*.md
+!README.md
+!USAGE_EXAMPLES.md
+!CHANGELOG.md
+!CONTRIBUTING.md
+!LICENSE.md
+!LICENSE

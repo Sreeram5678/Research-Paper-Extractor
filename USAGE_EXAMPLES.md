@@ -11,17 +11,13 @@ A comprehensive guide to every command available in the Research Paper Extractor
 5. [Paper Info](#5-paper-info)
 6. [Open in Browser](#6-open-in-browser)
 7. [Abstract Summarizer](#7-abstract-summarizer)
-8. [Citation Export](#8-citation-export)
-9. [Research Analytics](#9-research-analytics)
-10. [Watchlists & Alerts](#10-watchlists--alerts)
-11. [Local Library](#11-local-library)
-12. [Batch Downloads](#12-batch-downloads)
-13. [Daily Digest](#13-daily-digest)
-14. [Citation Counts](#14-citation-counts)
-15. [Related Papers](#15-related-papers)
-16. [Configuration](#16-configuration)
-17. [Utility Commands](#17-utility-commands)
-18. [Research Workflow Examples](#18-research-workflow-examples)
+19. [BibTeX Management](#19-bibtex-management)
+20. [Advanced Library Features](#20-advanced-library-features)
+21. [AI Paper Comparison](#21-ai-paper-comparison)
+22. [Full-Text PDF Search](#22-full-text-pdf-search)
+23. [Webhook Notifications](#23-webhook-notifications)
+24. [Search History & Analytics](#24-search-history--analytics)
+25. [Research Workflow Examples](#25-research-workflow-examples)
 
 ---
 
@@ -651,6 +647,118 @@ python main.py export "survey deep learning" -f bibtex -o all_refs.bib
 | `--manifest` | `-m` | search | Save a JSON manifest |
 | `--is-id` | `-i` | citations | Treat arg as arXiv ID |
 | `--is-query` | `-q` | summarize | Treat arg as search query |
+
+---
+
+## 19. BibTeX Management
+
+Import external references or export your entire library:
+
+```bash
+# Import papers from a BibTeX file into your library
+python main.py library import-bib my_references.bib
+
+# Export your entire library to a BibTeX file
+python main.py library export-bib complete_library.bib
+```
+
+---
+
+## 20. Advanced Library Features
+
+Modernize your local research database with exports and synchronization:
+
+### Markdown Export (Obsidian/Notion)
+```bash
+# Export library metadata as individual Markdown files
+python main.py library export-md --output-dir ~/MyKnowledgeBase
+
+# Filter by tag before exporting
+python main.py library export-md -t "must-read" -d ~/Obsidian/Papers
+```
+
+### Metadata Synchronization
+```bash
+# Update citation counts and venue info for library papers
+python main.py library sync-metadata
+
+# Sync a specific paper
+python main.py library sync-metadata --id 1706.03762
+```
+
+### Keyword Density Analysis
+```bash
+# Find the most frequent keywords across your library
+python main.py library analyze-keywords --limit 30
+
+# Analyze keywords for a specific topic/tag
+python main.py library analyze-keywords --tag "NLP"
+```
+
+---
+
+## 21. AI Paper Comparison
+
+Use Gemini 1.5 Flash to perform deep comparisons between papers:
+
+```bash
+# Basic structural comparison (TF-IDF based)
+python main.py compare 1706.03762 2301.07041
+
+# AI-powered deep comparison (requires GOOGLE_API_KEY)
+python main.py compare 1706.03762 2301.07041 --ai
+
+# Compare papers from Semantic Scholar
+python main.py compare id1 id2 --source semantic_scholar --ai
+```
+
+---
+
+## 22. Full-Text PDF Search
+
+Search for text across your entire downloaded PDF collection:
+
+```bash
+# Search for a term in all downloaded PDFs
+python main.py library search-pdfs "attention mechanism"
+
+# Case-sensitive search
+python main.py library search-pdfs "PyTorch" --case-sensitive
+```
+
+---
+
+## 23. Webhook Notifications
+
+Get alerts delivered directly to Discord or Slack:
+
+```bash
+# Set your webhook URL
+python main.py webhook set https://discord.com/api/webhooks/...
+
+# Send a test notification
+python main.py webhook test
+
+# New papers found via alerts will now be sent to this webhook
+python main.py check-alerts --days 1
+```
+
+---
+
+## 24. Search History & Analytics
+
+Persistent tracking of your research activity:
+
+```bash
+# View list of recent searches
+python main.py history list --limit 10
+
+# View search pattern statistics
+python main.py history stats
+
+# Clear search history
+python main.py history list --clear
+```
 
 ---
 
