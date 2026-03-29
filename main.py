@@ -958,6 +958,38 @@ def library_sync_metadata(arxiv_id: Optional[str], sync_all: bool):
     click.echo(f"✓ Finished syncing metadata for {synced_count} paper(s).")
 
 
+@cli.command()
+@click.argument('id1', required=True)
+@click.argument('id2', required=True)
+@click.option('--ai', is_flag=True, help='Use Gemini AI for deep comparison')
+def compare(id1: str, id2: str, ai: bool):
+    """Compare two papers by their arXiv IDs."""
+    from research_paper_extractor.comparison import PaperComparator
+    from research_paper_extractor.arxiv_api import ArxivAPI
+    
+    api = ArxivAPI()
+    click.echo(f"Fetching metadata for {id1} and {id2}...")
+    
+    p1 = api.get_paper_by_id(id1)
+    p2 = api.get_paper_by_id(id2)
+    
+    if not p1 or not p2:
+        click.echo("Error: Could not fetch both papers.")
+        return
+        
+    pc = PaperComparator()
+    
+    if ai:
+        click.echo("Generating AI comparison report (this may take a few seconds)...")
+        report = pc.ai_compare(p1, p2)
+        click.echo("\n── AI COMPARISON REPORT ──────────────────")
+        click.echo(report)
+        click.echo("──────────────────────────────────────────")
+    else:
+        diff = pc.compare(p1, p2)
+        click.echo(pc.format_comparison_report(p1, p2, diff))
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # FEATURE 7 — Batch download
 # ══════════════════════════════════════════════════════════════════════════════

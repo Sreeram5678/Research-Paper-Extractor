@@ -35,6 +35,35 @@ class PaperComparator:
         }
 
     @staticmethod
+    def ai_compare(paper1: Any, paper2: Any) -> str:
+        """Use Gemini AI to compare two papers."""
+        import os
+        try:
+            import google.generativeai as genai
+            api_key = os.getenv("GOOGLE_API_KEY")
+            if not api_key:
+                return "Error: GOOGLE_API_KEY not found in environment."
+                
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel('gemini-1.5-flash')
+            
+            prompt = (
+                f"Compare the following two research papers based on their abstracts:\n\n"
+                f"Paper 1: {paper1.title}\n"
+                f"Abstract 1: {paper1.summary}\n\n"
+                f"Paper 2: {paper2.title}\n"
+                f"Abstract 2: {paper2.summary}\n\n"
+                f"Identify key similarities, differences, and potential synergies."
+            )
+            
+            response = model.generate_content(prompt)
+            return response.text
+        except ImportError:
+            return "Error: google-generativeai package not installed."
+        except Exception as e:
+            return f"AI comparison failed: {e}"
+
+    @staticmethod
     def format_comparison_report(paper1: Any, paper2: Any, diff: Dict[str, Any]) -> str:
         """Formats the comparison result for CLI display."""
         lines = [
