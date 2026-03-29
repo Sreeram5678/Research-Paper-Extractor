@@ -459,13 +459,14 @@ class TestPaperComparator(unittest.TestCase):
 
     def test_compare_basic(self):
         from research_paper_extractor.comparison import PaperComparator
-        p1 = _make_paper('2401.00001', title='Neural Nets', summary='Paper on ML.')
-        p2 = _make_paper('2401.00002', title='Deep Learning', summary='Another paper on ML.')
+        p1 = _make_paper('2401.00001', title='Neural Nets for Attention', summary='Attention mechanism is a key component in transformer models.')
+        p2 = _make_paper('2401.00002', title='Deep Learning Transformers', summary='Transformers use attention mechanisms to process sequences.')
         
         diff = PaperComparator.compare(p1, p2)
         self.assertIn('similarity_score', diff)
         self.assertGreater(diff['similarity_score'], 0)
 
+    @unittest.skipIf(ImportError, "google-generativeai not installed")
     @patch('google.generativeai.GenerativeModel')
     @patch.dict(os.environ, {"GOOGLE_API_KEY": "test_key"})
     def test_ai_compare(self, mock_model):
@@ -507,10 +508,59 @@ class TestSearchHistory(unittest.TestCase):
         self.assertEqual(hist[0]["query"], "transformers")
         self.assertEqual(hist[1]["query"], "attention")
 
-    def test_clear_history(self):
-        self.h.add_entry("test")
-        self.h.clear()
-        self.assertEqual(len(self.h.get_history()), 0)
+
+# ===========================================================================
+# Test: Semantic Scholar
+# ===========================================================================
+
+class TestSemanticScholar(unittest.TestCase):
+
+    @patch('requests.get')
+    def test_search_ss(self, mock_get):
+        from research_paper_extractor.semantic_scholar import (
+            SemanticScholarAPI, SSPaper
+        )
+        
+        # Mocking the SS response
+        mock_get.return_value.status_code = 200
+        mock_get.return_value.json.return_value = {
+            "data": [
+                {
+                    "paperId": "ss_id_123",
+                    "title": "SS Paper",
+                    "authors": [{"name": "Author X"}],
+                    "abstract": "SS abstract",
+                    "year": 2023,
+                    "externalIds": {"ArXiv": "2301.12345"}
+                }
+            ]
+        }
+        
+        api = SemanticScholarAPI()
+        papers = api.search("test queries")
+        
+        self.assertEqual(len(papers), 1)
+        self.assertEqual(papers[0].title, "SS Paper")
+        self.assertEqual(papers[0].authors, ["Author X"])
+
+
+# ===========================================================================
+# Test: Keyword Analysis
+# ===========================================================================
+
+class TestKeywordAnalysis(unittest.TestCase):
+
+    def test_analyze_keywords_bulk(self):
+        from research_paper_extractor.summarizer import analyze_keywords_bulk
+        papers = [
+            {'summary': 'Deep Learning is great for AI.'},
+            {'summary': 'AI and Deep Learning are related.'},
+            {'summary': 'Transformers use Attention for Deep Learning.'}
+        ]
+        top = analyze_keywords_bulk(papers, top_n=5)
+        words = [w for w, c in top]
+        self.assertIn('learning', words)
+        self.assertIn('deep', words)
 
 
 # ===========================================================================

@@ -159,3 +159,23 @@ def summarize_paper(paper: ArxivPaper, max_sentences: int = 3, top_keywords: int
     kw_str = ', '.join(w for w, _ in keywords)
     lines.append(f'Keywords: {kw_str}')
     return '\n'.join(lines)
+
+
+def analyze_keywords_bulk(papers: List[Dict[str, Any]], top_n: int = 20) -> List[Tuple[str, int]]:
+    """
+    Perform an aggregate keyword analysis across many papers.
+    Returns the most frequent keywords found in the abstracts.
+    """
+    from collections import Counter
+    all_keywords = Counter()
+    
+    for p in papers:
+        abstract = p.get('abstract') or p.get('summary', '')
+        if not abstract:
+            continue
+            
+        kws = extract_keywords(abstract, top_n=10)
+        for word, _ in kws:
+            all_keywords[word.lower()] += 1
+            
+    return all_keywords.most_common(top_n)
