@@ -1,252 +1,260 @@
-# Research Paper Extractor
+# Research Paper Extractor v2.1
 
-A Python tool that automatically downloads research papers from arXiv based on topics you specify. Search by keywords, authors, categories, or specific paper IDs and download PDFs with ease!
+A powerful Python CLI tool to search, download, analyse, and manage research papers from arXiv. Search by keywords, authors, categories, or specific paper IDs — then export citations, generate digests, manage a personal library, and much more.
 
-## Features
+## ✨ Features (v2.1)
 
-- **Smart Search**: Search papers by keywords, topics, or phrases
-- **Author Search**: Find all papers by specific researchers
-- **Category Filtering**: Filter by arXiv categories (AI, ML, Computer Vision, etc.)
-- **Recent Papers**: Find papers published in the last N days
-- **Batch Download**: Download multiple papers at once
-- **Specific Downloads**: Download papers by arXiv ID
-- **Preview Mode**: See search results before downloading
-- **Interactive Mode**: User-friendly interactive interface
-- **Auto-Organization**: Automatic topic-based folder creation and file naming
-- **Topic Folders**: Each search creates its own organized folder
+### Core
+| Feature | Command |
+|---------|---------|
+| Keyword search + download | `search` |
+| Download by arXiv ID | `download-by-id` |
+| Find papers by author | `search-by-author` |
+| Interactive guided mode | `interactive` |
+| List arXiv categories | `categories` |
+
+### New in v2.x
+| Feature | Command |
+|---------|---------|
+| 📋 Citation export (BibTeX / RIS / APA / plain) | `export` |
+| 📊 Analytics on search results | `analyze` |
+| 📝 TF-IDF abstract summariser | `summarize` |
+| 🔔 Keyword/author watchlist management | `watch` |
+| 📬 Check watchlist for new papers | `check-alerts` |
+| 📚 Local SQLite paper library (read/tag/rate/notes) | `library` |
+| 📁 Batch download from .txt / .csv file | `batch` |
+| 📰 Daily markdown digest generator | `digest` |
+| 📈 Citation count lookup (Semantic Scholar) | `citations` |
+| 🔗 Related paper discovery | `related` |
+| ⚙️ User config file management | `config` |
+
+---
 
 ## Installation
 
-1. **Clone or download** this project to your computer
-2. **Navigate** to the project directory:
-   ```bash
-   cd "Research Paper Extractor"
-   ```
-3. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
+```bash
+git clone https://github.com/Sreeram5678/Research-Paper-Extractor.git
+cd Research-Paper-Extractor
+pip install -r requirements.txt
+```
+
+---
 
 ## Quick Start
 
-### Basic Search and Download
 ```bash
-# Search for machine learning papers and download them
-python main.py search "machine learning" --max-results 5
+# Search and download
+python main.py search "transformer architecture" -n 5
 
-# Preview results without downloading
-python main.py search "neural networks" --preview-only
+# Preview only (no download)
+python main.py search "diffusion models" --preview-only
 
-# Auto-download without confirmation
-python main.py search "computer vision" --auto-download
+# Download a specific paper
+python main.py download-by-id 1706.03762
+
+# Export citations from a search
+python main.py export "attention mechanism" -f bibtex -o refs.bib
+
+# Summarise paper abstracts
+python main.py summarize 1706.03762
+
+# Analyse search results
+python main.py analyze "large language models" -n 50
+
+# Generate a daily digest
+python main.py digest -c cs.AI -c cs.LG -d 3
+
+# Check for new papers in your watchlist
+python main.py watch add-keyword "diffusion models"
+python main.py check-alerts --days 7
 ```
 
-### Download by arXiv ID
-```bash
-# Download a specific paper by its arXiv ID
-python main.py download-by-id 2301.07041
+---
+
+## Command Reference
+
+### Core Commands
+
+```
+search          Search arXiv and optionally download results
+download-by-id  Download a specific paper by arXiv ID
+search-by-author Search for papers by a researcher's name
+categories      List all available arXiv categories
+interactive     Guided interactive search interface
 ```
 
-### Search by Author
-```bash
-# Find papers by a specific researcher
-python main.py search-by-author "Geoffrey Hinton"
+### Citation & Analysis
+
+```
+export          Export citations (bibtex | ris | apa | plain)
+analyze         Run analytics on search result collections
+summarize       Display TF-IDF key-point summaries of abstracts
+citations       Look up citation counts via Semantic Scholar
+related         Discover papers related to a given arXiv paper
 ```
 
-### Interactive Mode (Recommended for beginners)
-```bash
-# Launch interactive mode for guided searching
-python main.py interactive
+### Personal Management
+
 ```
+watch           Manage watchlist (add-keyword / add-author / list / clear)
+check-alerts    Scan arXiv for new papers matching your watchlist
+library         SQLite paper library (add / list / rate / tag / note / stats)
+batch           Bulk download from a .txt or .csv batch file
+digest          Generate a markdown daily digest of recent papers
+config          View and edit user preferences
+```
+
+---
 
 ## Usage Examples
 
-### 1. Search with Category Filters
+### Search with Filters
 ```bash
-# Search for AI papers in specific categories
-python main.py search "artificial intelligence" \
-  --categories cs.AI \
-  --categories cs.LG \
-  --max-results 10
-```
-
-### 2. Find Recent Papers
-```bash
-# Find papers from the last 7 days
-python main.py search "deep learning" \
-  --recent-days 7 \
-  --max-results 5
-```
-
-### 3. Custom Download Directory
-```bash
-# Download to a specific folder
-python main.py search "robotics" \
-  --download-dir "/path/to/my/papers" \
-  --max-results 3
-```
-
-### 4. Sort Results
-```bash
-# Sort by publication date (newest first)
-python main.py search "nlp" \
+python main.py search "graph neural networks" \
+  -c cs.LG -c cs.AI \
   --sort-by submittedDate \
-  --max-results 5
+  --recent-days 30 \
+  -n 10
 ```
 
-## Available Commands
+### Export BibTeX Citations
+```bash
+python main.py export "vision transformers" -f bibtex -o refs.bib
+python main.py export "contrastive learning" -f apa
+```
 
-### `search` - Main search command
-Search and download papers by topic/keywords.
+### Analytics on a Topic
+```bash
+python main.py analyze "federated learning" -n 100 -o report.txt
+```
 
-**Options:**
-- `--max-results, -n`: Number of papers to find (default: 10)
-- `--download-dir, -d`: Download directory (default: ./downloads)
-- `--categories, -c`: arXiv categories to search in
-- `--sort-by`: Sort by relevance, lastUpdatedDate, or submittedDate
-- `--preview-only, -p`: Only show results, don't download
-- `--auto-download, -a`: Download all without asking
-- `--recent-days`: Only show papers from last N days
+### Summarise Papers
+```bash
+python main.py summarize 2301.07041                         # by arXiv ID
+python main.py summarize "RLHF" --is-query -n 5            # by search query
+```
 
-### `download-by-id` - Download specific paper
-Download a paper using its arXiv ID.
+### Manage Your Library
+```bash
+python main.py library add 1706.03762
+python main.py library rate 1706.03762 5
+python main.py library note 1706.03762 "Foundational transformer paper"
+python main.py library tag 1706.03762 must-read
+python main.py library list --unread
+python main.py library stats
+```
 
-**Options:**
-- `--download-dir, -d`: Download directory
-- `--filename, -f`: Custom filename
+### Watchlist & Alerts
+```bash
+python main.py watch add-keyword "diffusion models"
+python main.py watch add-author "Yann LeCun"
+python main.py watch list
+python main.py check-alerts --days 3
+```
 
-### `search-by-author` - Author search
-Find papers by a specific author.
+### Batch Download
+```bash
+# Create a sample batch file first
+python main.py batch --create-sample my_batch.txt
+# Or use the included example
+python main.py batch example_batch.txt --max-per-query 3 --preview-only
+```
 
-**Options:**
-- `--max-results, -n`: Number of papers to find
-- `--download-dir, -d`: Download directory
-- `--preview-only, -p`: Only preview results
+### Daily Digest
+```bash
+python main.py digest -c cs.AI -c cs.CL -d 1 -o digests/
+python main.py digest -k "LLM fine-tuning" -k "RLHF" --print-only
+```
 
-### `categories` - List categories
-Show all available arXiv categories.
+### User Config
+```bash
+python main.py config show
+python main.py config set general max_results 20
+python main.py config set general download_dir ~/Papers
+python main.py config reset
+```
 
-### `interactive` - Interactive mode
-Launch guided interface for easy searching.
+---
 
 ## arXiv Categories
 
-Common categories you can use with `--categories`:
+40+ categories are supported. Some highlights:
 
 | Category | Description |
 |----------|-------------|
-| `cs.AI` | Artificial Intelligence |
-| `cs.LG` | Machine Learning |
-| `cs.CV` | Computer Vision and Pattern Recognition |
-| `cs.CL` | Computation and Language (NLP) |
-| `cs.NE` | Neural and Evolutionary Computing |
+| `cs.AI`  | Artificial Intelligence |
+| `cs.LG`  | Machine Learning |
+| `cs.CV`  | Computer Vision |
+| `cs.CL`  | Computation and Language (NLP) |
+| `cs.RO`  | Robotics |
 | `stat.ML` | Machine Learning (Statistics) |
-| `cs.CR` | Cryptography and Security |
-| `cs.DB` | Databases |
-| `cs.IR` | Information Retrieval |
-| `cs.SE` | Software Engineering |
+| `quant-ph` | Quantum Physics |
+| `q-bio.NC` | Neurons and Cognition |
+| `econ.EM` | Econometrics |
 
-See all categories: `python main.py categories`
+Run `python main.py categories` for the full list.
 
-## Configuration
+---
 
-You can modify settings in `config.py`:
+## File Organisation
 
-- **Download directory**: Change `DEFAULT_DOWNLOAD_DIR`
-- **Request delay**: Adjust `REQUEST_DELAY` (be respectful to arXiv servers!)
-- **Max results**: Change `DEFAULT_MAX_RESULTS`
-- **File naming**: Modify `sanitize_filename()` function
+Downloads are automatically organised by topic:
 
-## File Organization
-
-**NEW!** Each search topic automatically creates its own organized folder:
 ```
 downloads/
 ├── machine_learning/
 │   ├── Neural_Networks_2301.07041.pdf
-│   └── Deep_Learning_Basics_2302.12345.pdf
-├── computer_vision/
-│   ├── Image_Recognition_2303.67890.pdf
-│   └── Object_Detection_2304.11111.pdf
-├── author_geoffrey_hinton/
-│   └── Hinton_Research_2305.22222.pdf
-└── paper_1706.03762/
-    └── Attention_Is_All_You_Need_1706.03762.pdf
+│   └── manifest.json           ← JSON download manifest
+├── author_yann_lecun/
+│   └── ...
+└── batch_download/
+    └── ...
 ```
 
-## Tips & Best Practices
+---
 
-1. **Start with preview mode** (`-p`) to see what you'll get before downloading
-2. **Use specific keywords** for better results
-3. **Combine categories** to narrow down search scope
-4. **Be respectful** - don't download hundreds of papers at once
-5. **Check recent papers** using `--recent-days` for cutting-edge research
-6. **Use interactive mode** if you're new to the tool
+## Running Tests
 
-## Troubleshooting
+```bash
+python -m pytest tests.py -v
+# 47 tests, all passing on Python 3.13
+```
 
-### Common Issues
-
-**"No papers found"**
-- Try broader keywords
-- Check spelling
-- Remove category filters and search again
-
-**"Download failed"**
-- Check internet connection
-- Some papers might not have PDFs available
-- Try again later (temporary server issues)
-
-**"Permission denied"**
-- Check write permissions in download directory
-- Try a different download directory
-
-### Error Logs
-The tool provides detailed logging. Check the console output for specific error messages.
+---
 
 ## Dependencies
 
-- `requests` - HTTP requests
-- `feedparser` - Parse arXiv API responses
-- `beautifulsoup4` - HTML parsing
-- `lxml` - XML/HTML processing
-- `tqdm` - Progress bars
-- `click` - Command-line interface
-- `python-dateutil` - Date handling
+All standard-library friendly — no heavy ML dependencies required:
+
+- `feedparser` — parse arXiv Atom feed
+- `click` — CLI framework
+- `tqdm` — download progress bars
+- `requests`, `beautifulsoup4`, `lxml` — HTTP and HTML utilities
+
+New features use only stdlib: `sqlite3`, `json`, `configparser`, `csv`, `re`, `math`, `urllib`.
+
+---
+
+## Tips & Best Practices
+
+1. Start with `--preview-only` before downloading
+2. Use `export -f bibtex` to build a BibTeX database as you go
+3. Schedule `check-alerts` as a daily cron job for automatic updates
+4. Use `analyze` with `-n 100` for meaningful keyword statistics
+5. The library's `rate` and `tag` commands are great for paper reading workflows
+6. `digest` + `--print-only` pipes well into other tools
+
+---
 
 ## Contributing
 
-Feel free to submit issues and enhancement requests!
+Pull requests welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Complete Usage Guide
-
-For comprehensive usage examples and advanced features, see: **[USAGE_EXAMPLES.md](USAGE_EXAMPLES.md)**
-
-This detailed guide includes:
-- All command examples with explanations
-- Advanced usage patterns
-- Research workflow examples
-- Pro tips and best practices
+MIT — see [LICENSE](LICENSE).
 
 ---
 
-**Happy researching!**
-
-For more help: `python main.py --help` or `python main.py [command] --help`
-
-## Author
-
-**Name**: Sreeram  
-**Email**: sreeram.lagisetty@gmail.com  
-**GitHub**: [Sreeram5678](https://github.com/Sreeram5678)  
-**Instagram**: [@sreeram_3012](https://www.instagram.com/sreeram_3012?igsh=N2Fub3A5eWF4cjJs&utm_source=qr)
-
-
-
----
-
-**Repository**: [Research Paper Extractor](https://github.com/Sreeram5678/Research-Paper-Extractor.git)
+**Author**: Sreeram Lagisetty  
+**GitHub**: [Sreeram5678/Research-Paper-Extractor](https://github.com/Sreeram5678/Research-Paper-Extractor)
