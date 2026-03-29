@@ -209,6 +209,25 @@ class PaperLibrary:
                          (json.dumps(tags), arxiv_id))
             return True
 
+    def get_all_tags(self) -> List[str]:
+        """Return a list of all unique tags used in the library."""
+        all_tags = set()
+        with self._connect() as conn:
+            rows = conn.execute('SELECT tags FROM papers WHERE tags IS NOT NULL').fetchall()
+            for row in rows:
+                tags = json.loads(row['tags'] or '[]')
+                for t in tags:
+                    all_tags.add(t)
+        return sorted(list(all_tags))
+
+    def add_tags_bulk(self, arxiv_ids: List[str], tag: str) -> int:
+        """Add a tag to multiple papers."""
+        count = 0
+        for aid in arxiv_ids:
+            if self.add_tag(aid, tag):
+                count += 1
+        return count
+
     def set_file_path(self, arxiv_id: str, file_path: str) -> bool:
         """Update the local file path for a paper."""
         with self._connect() as conn:

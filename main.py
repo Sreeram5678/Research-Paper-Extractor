@@ -786,22 +786,25 @@ def library_stats():
 
 @library.command('export')
 @click.argument('filename', required=True)
-@click.option('--format', '-f', type=click.Choice(['csv', 'json']), default='csv', show_default=True)
+@click.option('--format', '-f', type=click.Choice(['csv', 'json', 'bibtex']), default='csv', show_default=True)
 def library_export(filename, format):
-    """Export the entire paper library to CSV or JSON."""
+    """Export the entire paper library to CSV, JSON, or BibTeX."""
     lib = PaperLibrary()
     
     # Ensure extension
-    if not filename.endswith(f".{format}"):
-        filename += f".{format}"
+    ext = format if format != 'bibtex' else 'bib'
+    if not filename.endswith(f".{ext}"):
+        filename += f".{ext}"
         
     click.echo(f"Exporting library to {filename} ({format.upper()})...")
     
     success = False
     if format == 'csv':
         success = lib.export_to_csv(filename)
-    else:
+    elif format == 'json':
         success = lib.export_to_json(filename)
+    else:
+        success = lib.export_to_bibtex(filename)
         
     if success:
         click.echo(f"✓ Library exported successfully to: {filename}")
