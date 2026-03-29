@@ -51,6 +51,7 @@ from research_paper_extractor.history import SearchHistory
 from research_paper_extractor.semantic_scholar import SemanticScholarAPI
 from research_paper_extractor.webhooks import WebhookManager
 from research_paper_extractor.comparison import PaperComparator
+from research_paper_extractor.utils import themed_header, themed_print
 from research_paper_extractor import config_manager
 
 # Set up logging
@@ -124,6 +125,7 @@ def search(query: str, max_results: Optional[int], download_dir: Optional[str],
 
         # Search
         papers = []
+        themed_header(f"Searching for: {query}")
         if source in ['arxiv', 'both']:
             click.echo(f"Searching arXiv for: '{query}'")
             if recent_days:
@@ -1058,6 +1060,14 @@ def config_set(section: str, key: str, value: str):
     click.echo(f"✓ Set [{section}] {key} = {value}")
 
 
+@config.command('theme')
+@click.argument('theme_name', type=click.Choice(['cyan', 'green', 'blue', 'yellow', 'white']))
+def config_theme(theme_name):
+    """Set the CLI color theme."""
+    config_manager.set_value('display', 'theme', theme_name)
+    themed_print(f"✓ CLI theme set to: {theme_name}", "success")
+
+
 @config.command('reset')
 @click.confirmation_option(prompt='Reset all settings to defaults?')
 def config_reset():
@@ -1123,9 +1133,7 @@ def info(arxiv_id: str, full_abstract: bool, do_summarize: bool):
             click.echo(f"Paper '{arxiv_id}' not found.", err=True)
             sys.exit(1)
 
-        click.echo('\n' + '═' * 65)
-        click.echo(f"  {paper.title}")
-        click.echo('═' * 65)
+        themed_header(paper.title)
         click.echo(f"\nAuthors     : {', '.join(paper.authors)}")
         click.echo(f"arXiv ID    : {paper.id}")
         click.echo(f"Published   : {paper.published.strftime('%Y-%m-%d')}")
