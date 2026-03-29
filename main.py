@@ -89,9 +89,12 @@ def cli():
               help='Only show papers from the last N days')
 @click.option('--add-to-library', '-l', is_flag=True,
               help='Add search results to your local library')
+@click.option('--manifest', '-m', is_flag=True,
+              help='Save a JSON manifest file after downloading')
 def search(query: str, max_results: Optional[int], download_dir: Optional[str],
            categories: tuple, sort_by: str, preview_only: bool,
-           auto_download: bool, recent_days: Optional[int], add_to_library: bool):
+           auto_download: bool, recent_days: Optional[int], add_to_library: bool,
+           manifest: bool):
     """Search and download papers from arXiv based on a query."""
 
     try:
@@ -144,6 +147,9 @@ def search(query: str, max_results: Optional[int], download_dir: Optional[str],
             click.echo(downloader.create_download_summary(downloaded_files))
             if downloaded_files:
                 click.echo("Download completed successfully!")
+                if manifest:
+                    mpath = downloader.save_download_manifest(papers, downloaded_files)
+                    click.echo(f"Manifest saved: {mpath}")
                 if add_to_library:
                     lib = PaperLibrary()
                     for p, fp in zip(papers, downloaded_files):
@@ -1003,6 +1009,94 @@ def config_reset():
     """Reset all configuration to defaults."""
     config_manager.reset_config()
     click.echo("✓ Configuration reset to defaults.")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# FEATURE 12 — Open paper in browser
+# ══════════════════════════════════════════════════════════════════════════════
+
+@cli.command('open')
+@click.argument('arxiv_id', required=True)
+@click.option('--pdf', is_flag=True, help='Open the PDF URL instead of the abstract page')
+def open_paper(arxiv_id: str, pdf: bool):
+    """Open an arXiv paper in your default web browser.
+
+    \b
+    Examples:
+      python main.py open 1706.03762
+      python main.py open 1706.03762 --pdf
+    """
+    from research_paper_extractor.utils import open_url_in_browser
+
+    if pdf:
+        url = f'https://arxiv.org/pdf/{arxiv_id}'
+    else:
+        url = f'https://arxiv.org/abs/{arxiv_id}'
+
+    click.echo(f"Opening: {url}")
+    success = open_url_in_browser(url)
+    if not success:
+        click.echo(f"Could not open browser. Please visit: {url}", err=True)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# FEATURE 13 — Paper info (quick paper details, no download)
+# ══════════════════════════════════════════════════════════════════════════════
+
+@cli.command()
+@click.argument('arxiv_id', required=True)
+@click.option('--full-abstract', '-a', is_flag=True,
+              help='Show full abstract instead of truncated preview')
+@click.option('--summarize', '-s', 'do_summarize', is_flag=True,
+              help='Show TF-IDF key-point summary of abstract')
+def info(arxiv_id: str, full_abstract: bool, do_summarize: bool):
+    """Display paper metadata without downloading.
+
+    Shows title, authors, categories, abstract preview, and URLs.
+
+    \b
+    Examples:
+      python main.py info 1706.03762
+      python main.py info 2301.07041 --full-abstract
+      python main.py info 2301.07041 --summarize
+    """
+    try:
+        api = ArxivAPI()
+        click.echo(f"Looking up: {arxiv_id}...")
+        paper = api.get_paper_by_id(arxiv_id)
+        if not paper:
+            click.echo(f"Paper '{arxiv_id}' not found.", err=True)
+            sys.exit(1)
+
+        click.echo('\n' + '═' * 65)
+        click.echo(f"  {paper.title}")
+        click.echo('═' * 65)
+        click.echo(f"\nAuthors     : {', '.join(paper.authors)}")
+        click.echo(f"arXiv ID    : {paper.id}")
+        click.echo(f"Published   : {paper.published.strftime('%Y-%m-%d')}")
+        click.echo(f"Updated     : {paper.updated.strftime('%Y-%m-%d')}")
+        click.echo(f"Categories  : {', '.join(paper.categories)}")
+        click.echo(f"Abstract URL: {paper.abs_url}")
+        if paper.pdf_url:
+            click.echo(f"PDF URL     : {paper.pdf_url}")
+
+        click.echo('\nAbstract:')
+        if full_abstract:
+            click.echo(paper.summary)
+        else:
+            from research_paper_extractor.utils import truncate_text
+            click.echo(truncate_text(paper.summary, max_chars=300))
+
+        if do_summarize:
+            from research_paper_extractor.summarizer import summarize_paper
+            click.echo('\n--- AI-free Summary ---')
+            click.echo(summarize_paper(paper))
+
+        click.echo('═' * 65)
+
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
