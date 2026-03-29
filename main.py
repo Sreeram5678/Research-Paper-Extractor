@@ -50,6 +50,9 @@ from research_paper_extractor.pdf_manager import PDFManager
 from research_paper_extractor.history import SearchHistory
 from research_paper_extractor.semantic_scholar import SemanticScholarAPI
 from research_paper_extractor.webhooks import WebhookManager
+from research_paper_extractor.comparison import PaperComparator
+from research_paper_extractor.recommender import Recommender
+from research_paper_extractor.utils import themed_header, themed_print
 from research_paper_extractor import config_manager
 
 # Set up logging
@@ -123,6 +126,7 @@ def search(query: str, max_results: Optional[int], download_dir: Optional[str],
 
         # Search
         papers = []
+        themed_header(f"Searching for: {query}")
         if source in ['arxiv', 'both']:
             click.echo(f"Searching arXiv for: '{query}'")
             if recent_days:
@@ -1057,6 +1061,14 @@ def config_set(section: str, key: str, value: str):
     click.echo(f"✓ Set [{section}] {key} = {value}")
 
 
+@config.command('theme')
+@click.argument('theme_name', type=click.Choice(['cyan', 'green', 'blue', 'yellow', 'white']))
+def config_theme(theme_name):
+    """Set the CLI color theme."""
+    config_manager.set_value('display', 'theme', theme_name)
+    themed_print(f"✓ CLI theme set to: {theme_name}", "success")
+
+
 @config.command('reset')
 @click.confirmation_option(prompt='Reset all settings to defaults?')
 def config_reset():
@@ -1122,9 +1134,7 @@ def info(arxiv_id: str, full_abstract: bool, do_summarize: bool):
             click.echo(f"Paper '{arxiv_id}' not found.", err=True)
             sys.exit(1)
 
-        click.echo('\n' + '═' * 65)
-        click.echo(f"  {paper.title}")
-        click.echo('═' * 65)
+        themed_header(paper.title)
         click.echo(f"\nAuthors     : {', '.join(paper.authors)}")
         click.echo(f"arXiv ID    : {paper.id}")
         click.echo(f"Published   : {paper.published.strftime('%Y-%m-%d')}")
@@ -1198,6 +1208,80 @@ def history(limit, clear):
         return
 
     click.echo(hist.format_history(limit))
+
+
+@cli.command('grep-pdf')
+@click.argument('query', required=True)
+@click.option('--path', '-p', default=None, help='File or directory to search (default: download_dir)')
+@click.option('--case-sensitive', '-i', is_flag=True, help='Perform case-sensitive search')
+def grep_pdf(query, path, case_sensitive):
+    """Search for text inside downloaded PDF files."""
+    search_path = path or config_manager.get_download_dir_from_config()
+    
+    if not os.path.exists(search_path):
+        click.echo(f"Error: Path '{search_path}' does not exist.", err=True)
+        return
+
+    click.echo(f"Searching for '{query}' in {search_path}...")
+    
+    if os.path.isfile(search_path):
+        results = {search_path: PDFManager.search_text(search_path, query, case_sensitive)}
+    else:
+        results = PDFManager.search_directory(search_path, query, case_sensitive)
+
+    if not results:
+        click.echo("No matches found.")
+        return
+
+    total_matches = sum(len(m) for m in results.values())
+    click.echo(f"Found {total_matches} matches across {len(results)} file(s):\n")
+
+    for file_path, matches in results.items():
+        click.echo(f"📄 {os.path.basename(file_path)}")
+        for match in matches[:5]: # Show first 5 matches per file
+            click.echo(f"   [Page {match['page']}] {match['context']}")
+        if len(matches) > 5:
+            click.echo(f"   ... and {len(matches) - 5} more matches in this file.")
+        click.echo("")
+
+
+@cli.command('compare')
+@click.argument('id1', required=True)
+@click.argument('id2', required=True)
+@click.option('--source', '-s', default='arxiv', type=click.Choice(['arxiv', 'semantic_scholar']), help='Search source (default: arxiv)')
+def compare_papers(id1, id2, source):
+    """Compare two papers by their arXiv or Semantic Scholar IDs."""
+    api = ArxivAPI() if source == 'arxiv' else SemanticScholarAPI()
+    
+    click.echo(f"Fetching papers: {id1} and {id2}...")
+    p1 = api.get_paper_by_id(id1)
+    p2 = api.get_paper_by_id(id2)
+    
+    if not p1 or not p2:
+        click.echo(f"Error: Could not find both papers. Check IDs and source.")
+        return
+
+    diff = PaperComparator.compare(p1, p2)
+    click.echo(PaperComparator.format_comparison_report(p1, p2, diff))
+
+
+@cli.command('recommend')
+@click.option('--limit', '-l', default=5, type=int, help='Number of recommendations (default: 5)')
+def recommend_papers(limit):
+    """Get paper recommendations based on your search history and library tags."""
+    rec = Recommender()
+    themed_header("Paper Recommendations")
+    
+    click.echo("Analyzing your recent activity...")
+    results = rec.get_recommendations(limit=limit)
+    
+    if not results:
+        themed_print("No recommendations yet. Try searching for more papers or tagging your library!", "warning")
+        return
+        
+    for i, p in enumerate(results, 1):
+        themed_print(f"{i}. {p.title}", "info")
+        click.echo(f"   ID: {p.id} | {p.abs_url}\n")
 
 
 if __name__ == '__main__':
