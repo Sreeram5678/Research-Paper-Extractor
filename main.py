@@ -613,6 +613,48 @@ def watch_clear():
     click.echo("Watchlist cleared.")
 
 
+@cli.group()
+def webhook():
+    """Manage notification webhooks (Discord/Slack)."""
+    pass
+
+
+@webhook.command('set')
+@click.argument('url', required=True)
+def webhook_set(url: str):
+    """Set the Discord/Slack webhook URL."""
+    from research_paper_extractor import config_manager
+    config_manager.set_value('notifications', 'webhook_url', url)
+    click.echo(f"✓ Webhook URL updated successfully.")
+
+
+@webhook.command('test')
+def webhook_test():
+    """Send a test message to your configured webhook."""
+    from research_paper_extractor import config_manager
+    from research_paper_extractor.webhooks import WebhookManager
+    
+    url = config_manager.get('notifications', 'webhook_url')
+    if not url:
+        click.echo("Error: No webhook URL configured. Use 'webhook set <URL>' first.")
+        return
+        
+    click.echo(f"Sending test message to {url[:40]}...")
+    wm = WebhookManager(url)
+    if wm.send_simple_message("🚀 This is a test notification from Research Paper Extractor v2.0.0!"):
+        click.echo("✓ Test message sent successfully!")
+    else:
+        click.echo("Error: Failed to send test message. Check your URL and connection.", err=True)
+
+
+@webhook.command('clear')
+def webhook_clear():
+    """Remove the configured webhook URL."""
+    from research_paper_extractor import config_manager
+    config_manager.set_value('notifications', 'webhook_url', '')
+    click.echo("✓ Webhook URL cleared.")
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # FEATURE 5 — Check alerts
 # ══════════════════════════════════════════════════════════════════════════════
