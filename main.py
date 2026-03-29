@@ -849,6 +849,49 @@ def library_export(filename, format):
         click.echo("Error: Could not export library (is it empty?)", err=True)
 
 
+@library.command('import-bib')
+@click.argument('bib_file', type=click.Path(exists=True))
+@click.option('--fetch-metadata', '-f', is_flag=True, help='Fetch full metadata from arXiv for each ID')
+def library_import_bib(bib_file: str, fetch_metadata: bool):
+    """Import papers from a .bib file into your library."""
+    from research_paper_extractor.bibtex_parser import parse_bibtex_file, bib_entry_to_paper_obj
+    
+    entries = parse_bibtex_file(bib_file)
+    if not entries:
+        click.echo(f"No valid arXiv entries found in {bib_file}.")
+        return
+
+    click.echo(f"Found {len(entries)} candidate papers in BibTeX file.")
+    lib = PaperLibrary()
+    api = ArxivAPI()
+    
+    added_count = 0
+    with click.progressbar(entries, label='Importing papers') as bar:
+        for entry in bar:
+            arxiv_id = entry.get('arxiv_id')
+            if not arxiv_id:
+                continue
+                
+            paper = None
+            if fetch_metadata:
+                try:
+                    paper = api.get_paper_by_id(arxiv_id)
+                except Exception:
+                    pass
+            
+            if not paper:
+                # Use metadata from BibTeX
+                mock_entry = bib_entry_to_paper_obj(entry)
+                if mock_entry:
+                    paper = ArxivPaper(mock_entry)
+            
+            if paper:
+                if lib.add_paper(paper):
+                    added_count += 1
+                
+    click.echo(f"✓ Successfully imported {added_count} new papers to library.")
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # FEATURE 7 — Batch download
 # ══════════════════════════════════════════════════════════════════════════════
