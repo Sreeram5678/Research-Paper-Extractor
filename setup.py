@@ -13,10 +13,14 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
 
 setup(
     name="research-paper-extractor",
-    version="1.0.0",
-    author="Sreeram",
+    version="2.1.0",
+    author="Sreeram Lagisetty",
     author_email="sreeram.lagisetty@gmail.com",
-    description="A Python tool that automatically downloads research papers from arXiv based on topics you specify",
+    description=(
+        "Search, download, analyse, and manage arXiv research papers. "
+        "Features citation export, TF-IDF summaries, a local library, "
+        "daily digests, batch downloads, and Semantic Scholar citation lookup."
+    ),
     long_description=long_description,
     long_description_content_type="text/markdown",
     license="MIT",
@@ -45,10 +49,14 @@ setup(
     install_requires=requirements,
     entry_points={
         "console_scripts": [
+            "rpe=main:cli",
             "research-paper-extractor=main:cli",
         ],
     },
-    keywords="arxiv research papers download pdf machine learning ai",
+    keywords=(
+        "arxiv research papers download pdf machine learning ai nlp "
+        "citation bibtex digest library watchlist semantic scholar"
+    ),
     project_urls={
         "Bug Reports": "https://github.com/Sreeram5678/Research-Paper-Extractor/issues",
         "Source": "https://github.com/Sreeram5678/Research-Paper-Extractor",
